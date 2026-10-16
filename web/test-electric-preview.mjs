@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { mixedPreviewRequest, previewChoice, previewSelection, previewGuidance } from './mixed-preview.mjs';
 import { ProcessingOutbox, transitionOperation, validateOperation } from './processing-outbox.mjs';
+import {electricTonePreset,electricToneForPreset,electricToneLabel,electricToneDescription} from './electric-tone.mjs';
 
 // Pure settings/description checks: no browser, media, network or native calls.
 const source={id:'original',url:'/api/media/original',name:'Synthetic original'};
@@ -59,10 +60,10 @@ function appRig({enabled=false,ready=false}={}){
   const fields=new Map(),requests=[],saved=[],messages=[];let reads=0,syncs=0,statusReply={bass_ready:true,electric_ready:ready};
   const node=()=>({children:[],value:'',options:[{},{}],disabled:false,textContent:'',append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},scrollIntoView(){},focus(){}});
   const $=id=>{if(!fields.has(id))fields.set(id,node());return fields.get(id)};
-  for(const [id,value]of Object.entries({mixedInstrument:'electric',mixedPerformers:'2',mixedStart:'1',mixedEnd:'3',mixedBassPart:'bass-line',mixedAccompaniment:'melody-only',mixedSourceNotes:'Ringing electric',mixedArrangementNotes:'Keep rests'}))$(id).value=value;
+  for(const [id,value]of Object.entries({mixedInstrument:'electric',mixedPerformers:'2',mixedStart:'1',mixedEnd:'3',mixedBassPart:'bass-line',mixedAccompaniment:'melody-only',mixedSourceNotes:'Ringing electric',mixedArrangementNotes:'Keep rests',mixedElectricTone:'dry'}))$(id).value=value;
   const local={...source,cached:true,sha256:'a'.repeat(64),size:4,type:'audio/wav'};
   const scope={$ ,mixedSource:local,tracks:[local],activeJob:null,refinementStarting:false,enqueueingProcessing:false,bassAvailability:{ready:true},
-    mixedPreviewRequest,previewSelection,previewChoice,previewGuidance,action:fn=>fn(),withProcessingLock:fn=>fn(),
+    mixedPreviewRequest,previewSelection,previewChoice,previewGuidance,electricTonePreset,electricToneForPreset,electricToneLabel,electricToneDescription,restoredElectricTone:undefined,action:fn=>fn(),withProcessingLock:fn=>fn(),
     apiJSON:async(url,options)=>{if(!options)return statusReply;requests.push({url,request:JSON.parse(options.body)});return {id:'new-job',state:'queued'}},
     claimResult:()=>1,showJob:async()=>{},comparison:{stop(){}},jobMessage:text=>messages.push(text),
     processingBytes:async()=>{reads++;return new ArrayBuffer(4)},processingMime:()=> 'audio/wav',mediaPath:sha=>'/offline-media/'+sha,
@@ -96,10 +97,28 @@ const saved=appRig();saved.scope.restoreMixedSettings(mixedPreviewRequest(source
 assert.equal(saved.$('mixedInstrument').value,'electric');assert.equal(saved.$('mixedElectricOption').disabled,true);
 assert.equal(saved.$('mixedBassPartLabel').hidden,true);assert.equal(saved.$('mixedAccompanimentLabel').hidden,true);
 assert.equal(saved.$('mixedAccompaniment').value,'melody-and-bass');assert.match(saved.$('mixedPerformers').options[1].textContent,/Two Electric/);
-assert.match(saved.$('mixedPartDescription').textContent,/Dry Electric samples.*estimated melody and bass/);
+assert.match(saved.$('mixedPartDescription').textContent,/Electric samples.*estimated melody and bass/);
 const paragraphs=[];saved.scope.showSavedGuidance(mixedPreviewRequest(source,1,3,1,{source_notes:'Saved observation'},{instrument:'electric'}),{append:p=>paragraphs.push(p.textContent)});
 assert.match(paragraphs[0],/dry Electric guitar/);assert.match(paragraphs[1],/saved note, not analyzed/);
 assert.equal(saved.requests.length,0);assert.equal(saved.saved.length,0);
+
+// The actual form, settings restore and offline click snapshot retain tone.
+for(const preset of ['clean','room','delay']){
+  const r=appRig({enabled:true,ready:true});r.$('mixedElectricTone').value=preset;
+  await r.$('mixedForm').onsubmit({preventDefault(){}});
+  assert.deepEqual(r.requests[0].request.electric_tone,electricToneForPreset(preset));
+  assert.doesNotMatch(r.messages[0],/dry Electric/);
+  const q=appRig({enabled:true});q.$('mixedElectricTone').value=preset;
+  let release;q.scope.withProcessingLock=fn=>new Promise(resolve=>{release=()=>Promise.resolve(fn()).then(resolve)});
+  const pending=q.$('mixedQueue').onclick();q.$('mixedElectricTone').value='dry';await release();await pending;
+  assert.deepEqual(q.saved[0].request.electric_tone,electricToneForPreset(preset));
+}
+const customTone={...electricToneForPreset('room'),gain_db:-3,ambience_mix:.17};
+const customRig=appRig({enabled:true,ready:true});customRig.scope.restoreMixedSettings(mixedPreviewRequest(source,1,3,1,{}, {instrument:'electric',electric_tone:customTone}));
+assert.equal(customRig.$('mixedElectricTone').value,'custom');assert.equal(customRig.$('mixedElectricToneCustom').hidden,false);
+await customRig.$('mixedForm').onsubmit({preventDefault(){}});assert.deepEqual(customRig.requests[0].request.electric_tone,customTone);
+const invalidTone=appRig({enabled:true,ready:true});invalidTone.$('mixedElectricTone').value='unknown';
+await invalidTone.$('mixedForm').onsubmit({preventDefault(){}});assert.equal(invalidTone.requests.length,0);assert.match(invalidTone.$('mixedError').textContent,/available Electric tone/);
 
 // Saved results stay readable and correctly labelled while new revisions and
 // candidate submissions remain gated, even if a caller bypasses disabled UI.
@@ -128,12 +147,13 @@ class MemoryStore{
   async list(){return [...this.rows.values()].map(row=>copy(validateOperation(row)))}
   async update(id,change){const row=transitionOperation(this.rows.get(id),change);assert.equal(row.operation_id,id);this.rows.set(id,row);return copy(row)}
 }
-async function uncertainElectric({state='queued',cancelRequested=true,lookupError=null,changeRequest=request=>request,cancelState='cancelled'}={}){
+async function uncertainElectric({state='queued',cancelRequested=true,lookupError=null,changeRequest=request=>request,cancelState='cancelled',tone}={}){
   const store=new MemoryStore(),calls=[],bytes=new TextEncoder().encode('silent Electric queue identity');
   const sha=createHash('sha256').update(bytes).digest('hex');
   const localSource={track_id:uuid(9),name:'original.wav',type:'audio/wav',sha256:sha,size:bytes.length};
   const request={start_seconds:1,end_seconds:3,performers:2,instrument:'electric',
     guidance:{source_notes:' cafe\u0301 ',arrangement_notes:' Keep rests ',accompaniment:'melody-and-bass'}};
+  if(tone)request.electric_tone=tone;
   let remote;
   const first=new ProcessingOutbox({store,uuid:()=>uuid(1),now:()=>1,getBytes:async()=>bytes,
     hashBytes:async data=>createHash('sha256').update(data).digest('hex'),
@@ -173,6 +193,13 @@ assert.equal(cancelling.after.status,'cancel-requested');cancelling.remote.state
 assert.equal((await cancelling.store.get(uuid(1))).status,'cancelled');assert.equal(cancelling.calls.filter(([method])=>method==='POST').length,1);
 const completed=await uncertainElectric({state:'complete'});assert.equal(completed.after.status,'complete');assert.equal(completed.calls.length,1);
 const accepted=await uncertainElectric({cancelRequested:false});assert.equal(accepted.after.status,'accepted');assert.equal(accepted.calls.length,1);
+for(const tone of [electricToneForPreset('room'),customTone]){
+  const valid=await uncertainElectric({tone});assert.equal(valid.after.status,'cancelled');
+  for(const changeRequest of [q=>({...q,electric_tone:{...q.electric_tone,ambience_mix:.2}}),q=>{delete q.electric_tone;return q}]){
+    const refused=await uncertainElectric({tone,changeRequest});assert.equal(refused.after.status,'attention');
+    assert.equal(refused.calls.length,1);assert.equal(refused.remote.state,'queued');
+  }
+}
 for(const status of [404,401,403,503,undefined]){
   const r=await uncertainElectric({lookupError:Object.assign(Error('Lookup unavailable'),status===undefined?{}:{status})});
   assert.equal(r.after.receipt,null);assert.equal(r.after.status,[404,401,403].includes(status)?'attention':'cancel-requested');

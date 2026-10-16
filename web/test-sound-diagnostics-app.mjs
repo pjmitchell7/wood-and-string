@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import * as tones from './electric-tone.mjs';
 import {mountSoundDiagnostics} from './sound-diagnostics.mjs';
 
 // Actual result-view function and diagnostic renderer, with only browser,
@@ -16,7 +17,7 @@ class Node{
 }
 const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,new Node(id));return nodes.get(id)};
 let refreshes=0,requests=0,playing=0;
-const c={$ ,activeJob:null,activeJobKind:null,pollTimer:null,tracks:[{id:'render'}],
+const c={...tones,$ ,activeJob:null,activeJobKind:null,pollTimer:null,tracks:[{id:'render'}],
   document:{createElement:tag=>{assert.notEqual(tag,'audio');return new Node(tag)}},
   localStorage:{setItem(){},removeItem(){}},mountSoundDiagnostics,
   jobMessage:text=>$('message').textContent=text,button:(text,onclick)=>Object.assign(new Node('button'),{textContent:text,onclick}),

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import * as tones from './electric-tone.mjs';
 import { mixedPreviewRequest } from './mixed-preview.mjs';
 
 // Execute current app handlers with only browser/storage/transport boundaries
@@ -27,7 +28,7 @@ function enqueueRig(overrides={}){
   const nodes=new Map(),saved=[];let syncs=0;
   const $=name=>{if(!nodes.has(name))nodes.set(name,{value:'',disabled:false,textContent:''});return nodes.get(name)};
   for(const [key,value]of Object.entries({mixedStart:'0.25',mixedEnd:'6.25',mixedPerformers:'1',mixedInstrument:'acoustic',mixedBassPart:'melody',mixedAccompaniment:'melody-only',mixedSourceNotes:'Ringing line',mixedArrangementNotes:'Keep the rests'}))$(key).value=value;
-  const context=vm.createContext({$,enqueueingProcessing:false,action:fn=>fn(),withProcessingLock:fn=>fn(),
+  const context=vm.createContext({...tones,restoredElectricTone:undefined,$,enqueueingProcessing:false,action:fn=>fn(),withProcessingLock:fn=>fn(),
     mixedSource:copy(original),mixedPreviewRequest,mediaPath:key=>'/offline-media/'+key,
     processingBytes:async()=>new ArrayBuffer(4),processingOutbox:{enqueue:async(s,r)=>saved.push(copy({source:s,request:r}))},
     syncProcessing:()=>{syncs++;return new Promise(()=>{})},play:()=>{throw Error('Playback forbidden')},...overrides});
@@ -74,7 +75,7 @@ await test('failed cache verification or durable enqueue leaves controls reusabl
 await test('actual processingBytes checks cache presence, complete length and digest',async()=>{
   for(const kind of ['missing','length','hash','good']){
     const data=new ArrayBuffer(kind==='length'?3:4);
-    const c=vm.createContext({MEDIA:'cache',mediaPath:key=>key,caches:{open:async()=>({match:async()=>kind==='missing'?null:{arrayBuffer:async()=>data}})},hash:async()=>kind==='hash'?'b'.repeat(64):source.sha256});
+    const c=vm.createContext({...tones,restoredElectricTone:undefined,MEDIA:'cache',mediaPath:key=>key,caches:{open:async()=>({match:async()=>kind==='missing'?null:{arrayBuffer:async()=>data}})},hash:async()=>kind==='hash'?'b'.repeat(64):source.sha256});
     vm.runInContext(bytesSource,c);
     if(kind==='good')assert.equal(await c.processingBytes(source),data);
     else await assert.rejects(()=>c.processingBytes(source));
@@ -94,7 +95,7 @@ function uploadRig({reply=asset,fail=false,hold=false}={}){
     queueMicrotask(async()=>{started.resolve();await Promise.resolve();if(hold)await release.promise;if(fail){tx.onabort?.();return}for(const op of ops)op();tx.oncomplete?.()});
     return tx;
   }};
-  const context=vm.createContext({tracks:[copy(original),{...copy(original),id:asset.id,url:'/api/media/'+asset.id}],queue:[original.id,original.id],db,
+  const context=vm.createContext({...tones,restoredElectricTone:undefined,tracks:[copy(original),{...copy(original),id:asset.id,url:'/api/media/'+asset.id}],queue:[original.id,original.id],db,
     processingAPI:async(url,options,timeout)=>{assert.equal(url,'/api/import');assert.equal(timeout,180000);assert.equal(options.body.byteLength,4);return copy(reply)},
     draw:()=>draws++,play:()=>{throw Error('Playback forbidden')}});
   vm.runInContext(aliasesSource+uploadSource,context);
@@ -143,7 +144,7 @@ await test('completed queue preview cannot replace an active or starting preview
   const nodes=new Map(),$=name=>{if(!nodes.has(name))nodes.set(name,new Node());return nodes.get(name)};let opened=0;
   const row={status:'complete',source,receipt:{job_id:id(7)},reason:null,
     request:{start_seconds:.25,end_seconds:6.25,performers:1,instrument:'jazz-bass',bass_part:'bass-line',guidance:{arrangement_notes:'Keep <space> & rests'}}};
-  const c=vm.createContext({$,processingOutbox:{list:async()=>[row]},document:{createElement:()=>new Node()},
+  const c=vm.createContext({...tones,restoredElectricTone:undefined,$,processingOutbox:{list:async()=>[row]},document:{createElement:()=>new Node()},
     button:(text,fn)=>Object.assign(new Node(text),{onclick:fn}),viewSavedJob:async()=>opened++,activeJob:id(8),refinementStarting:false});
   vm.runInContext(processingDrawSource,c);await c.drawProcessing();
   const label=$('processingQueue').children[0].children[0].textContent;
@@ -154,15 +155,18 @@ await test('completed queue preview cannot replace an active or starting preview
   c.activeJob=null;c.refinementStarting=true;await assert.rejects(async()=>open.onclick(),/current preview/);assert.equal(opened,0);
   c.refinementStarting=false;await open.onclick();assert.equal(opened,1);
   row.request={start_seconds:1,end_seconds:3,performers:2,instrument:'electric'};await c.drawProcessing();
-  assert.match($('processingQueue').children[0].children[0].textContent,/Dry Electric · 2 players/);
+  assert.match($('processingQueue').children[0].children[0].textContent,/dry Electric guitar · 2 players/);
   assert.doesNotMatch($('processingQueue').children[0].children[0].textContent,/Acoustic|Jazz Bass|bass line/);
+  row.request.electric_tone=tones.electricToneForPreset('room');await c.drawProcessing();
+  assert.match($('processingQueue').children[0].children[0].textContent,/Electric guitar with room · 2 players/);
+  assert.doesNotMatch($('processingQueue').children[0].children[0].textContent,/dry/i);
 });
 
 await test('actual cache removal preserves pending unreceipted original and fails closed on unreadable intent storage',async()=>{
   for(const state of ['local','waiting','attention','cancel-requested','storage-error','received','cancelled']){
     const track={...copy(original),url:'/api/media/'+asset.id};let deletes=0,puts=0;
     const row={source,status:state==='received'?'accepted':state,receipt:state==='received'?{job_id:id(7)}:null};
-    const c=vm.createContext({tracks:[track],navigator:{locks:{request:async(name,fn)=>fn()}},processingOutbox:{list:async()=>{if(state==='storage-error')throw Error('Storage unavailable');return [row]}},
+    const c=vm.createContext({...tones,restoredElectricTone:undefined,tracks:[track],navigator:{locks:{request:async(name,fn)=>fn()}},processingOutbox:{list:async()=>{if(state==='storage-error')throw Error('Storage unavailable');return [row]}},
       caches:{open:async()=>({delete:async()=>deletes++})},MEDIA:'cache',mediaPath:id=>id,put:async()=>puts++,draw(){},storage:async()=>{},status(){}});
     vm.runInContext(removeSource,c);
     if(['received','cancelled'].includes(state)){
@@ -176,7 +180,7 @@ await test('actual cache removal preserves pending unreceipted original and fail
 await test('cache removal refuses unavailable cross-tab coordination before touching storage or audio',async()=>{
   for(const navigator of [undefined,{}, {locks:{}}]){
     const track={...copy(original),url:'/api/media/'+asset.id};let touched=0;
-    const c=vm.createContext({navigator,tracks:[track],processingOutbox:{list:async()=>{touched++;return []}},
+    const c=vm.createContext({...tones,restoredElectricTone:undefined,navigator,tracks:[track],processingOutbox:{list:async()=>{touched++;return []}},
       caches:{open:async()=>{touched++;throw Error('Cache must not open')}}});
     vm.runInContext(removeSource,c);
     await assert.rejects(()=>c.removeDownload(track),/safe removal is unavailable/);

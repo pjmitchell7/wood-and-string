@@ -1,4 +1,5 @@
 // Explicit review of uncertain source-part candidates, never automatic acceptance.
+import {ELECTRIC_TONE_CHOICES,electricToneForPreset} from './electric-tone.mjs?v=25';
 export function instrumentalChanges(arrangement){
   const originals=arrangement?.source?.notes||[],notes=arrangement?.notes||[];
   const rate=arrangement?.sample_rate||arrangement?.source?.sample_rate,origin=arrangement?.render_origin_sample??0;
@@ -70,16 +71,20 @@ export function mountInstrumentalCandidates({job,root,submit,document:doc=global
   const choiceLabel=node('label','Render selected notes with'),instrument=node('select');
   const acoustic=node('option','One acoustic guitar');acoustic.value='acoustic';
   const bass=node('option','One Jazz Bass · experimental');bass.value='jazz-bass';bass.disabled=!bassAvailability().ready;
-  const electric=node('option','One dry Electric guitar · experimental');electric.value='electric';electric.disabled=electricEnabled!==true||electricAvailability().ready!==true;
+  const electric=node('option','One Electric guitar · experimental');electric.value='electric';electric.disabled=electricEnabled!==true||electricAvailability().ready!==true;
   instrument.append(acoustic,bass,electric);instrument.value='acoustic';choiceLabel.append(instrument);panel.append(choiceLabel);
+  const toneLabel=node('label','Electric tone'),tone=node('select');
+  for(const [value,label]of ELECTRIC_TONE_CHOICES){const option=node('option',label);option.value=value;tone.append(option)}
+  tone.value='dry';toneLabel.hidden=true;toneLabel.append(tone);panel.append(toneLabel);
   const consentLabel=node('label'),consent=node('input');consent.type='checkbox';consent.checked=false;
   consentLabel.append(consent,node('span','I choose these notes as the lead/melody part for this arrangement. This is my interpretation, not a detected source role.'));panel.append(consentLabel);
-  panel.append(node('p','Only checked notes from this interpretation will be proposed for one player. Other candidates remain saved evidence. Physical planning may still transpose or omit selected notes; review those changes. Electric uses dry samples without amplifier or reverb. Drums and automatic style interpretation are unavailable.'));
+  panel.append(node('p','Only checked notes from this interpretation will be proposed for one player. Other candidates remain saved evidence. Physical planning may still transpose or omit selected notes; review those changes. Electric offers dry guitar or explicit clean, room and delay choices. Effects cannot recover missing notes or source sustain. Drums and automatic style interpretation are unavailable.'));
   if(electricEnabled!==true)panel.append(node('p','Experimental Electric previews are still being tested. Saved Electric previews remain available.'));
   const message=node('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
   const save=node('button','Preview selected notes');save.type='button';
   let boxes=[];
   function state(){save.disabled=busy||!selected.size||!consent.checked;policy.disabled=instrument.disabled=consent.disabled=busy;for(const box of boxes)box.disabled=busy;
+    toneLabel.hidden=instrument.value!=='electric';tone.disabled=busy||instrument.value!=='electric'||electricEnabled!==true;
     const count=bundle.interpretations[policy.value].events.length;
     previousPage.disabled=busy||page===0;nextPage.disabled=busy||(page+1)*pageSize>=count;
     pageStatus.textContent=`${count?`${page*pageSize+1}–${Math.min((page+1)*pageSize,count)} of ${count}`:'0'} candidates shown. ${selected.size} selected across all pages.`;
@@ -100,6 +105,7 @@ export function mountInstrumentalCandidates({job,root,submit,document:doc=global
   previousPage.onclick=()=>{if(!busy&&isCurrent()&&page>0){page--;renderPage()}};
   nextPage.onclick=()=>{if(!busy&&isCurrent()&&(page+1)*pageSize<bundle.interpretations[policy.value].events.length){page++;renderPage()}};
   policy.onchange=()=>{if(!busy&&isCurrent())show()};consent.onchange=()=>{if(!busy&&isCurrent())state()};
+  instrument.onchange=()=>{if(!busy&&isCurrent())state()};
   save.onclick=async()=>{
     if(busy||!isCurrent())return;
     try{
@@ -111,10 +117,12 @@ export function mountInstrumentalCandidates({job,root,submit,document:doc=global
       }
       if(!['acoustic','jazz-bass','electric'].includes(instrument.value))throw Error('Choose a supported instrument.');
       busy=true;state();message.textContent='Saving your selected interpretation…';
-      await submit({parent_job_id:job.id,interpretation:policy.value,note_ids:[...selected].sort(),instrument:instrument.value,accept_as_lead:true});
+      const request={parent_job_id:job.id,interpretation:policy.value,note_ids:[...selected].sort(),instrument:instrument.value,accept_as_lead:true};
+      if(instrument.value==='electric'){const settings=electricToneForPreset(tone.value);if(settings)request.electric_tone=settings}
+      await submit(request);
     }catch(error){if(isCurrent())message.textContent=error.message}
     finally{busy=false;if(isCurrent())state()}
   };
   panel.append(save,message);root.append(panel);show();
-  return {panel,policy,instrument,consent,save,message,previousPage,nextPage,pageStatus,get boxes(){return boxes},get selected(){return [...selected]}};
+  return {panel,policy,instrument,tone,toneLabel,consent,save,message,previousPage,nextPage,pageStatus,get boxes(){return boxes},get selected(){return [...selected]}};
 }

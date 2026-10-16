@@ -50,7 +50,11 @@ assert.ok(all(bassRoot).some(n=>n.textContent.includes('fitted to the Jazz Bass 
 assert.ok(all(bassRoot).some(n=>n.textContent.includes('follow the estimated bass line. The other part remains visible')));
 const electricRoot=new Node('root');mountRefinement({job:electric,root:electricRoot,document,submit:()=>{throw Error('Unexpected submit')}});
 assert.ok(all(electricRoot).some(n=>n.textContent.includes('fitted to the Electric guitar players again')));
-assert.ok(all(electricRoot).some(n=>n.textContent.includes('dry Electric samples, with no added amplifier, reverb or sustain')));
+assert.ok(all(electricRoot).some(n=>n.textContent.includes('Dry guitar samples, with no added tone processing.')));
+const roomRoot=new Node('root'),roomJob=structuredClone(electric);roomJob.request.electric_tone={mode:'clean',gain_db:-6,ambience:'room',ambience_mix:.1};
+mountRefinement({job:roomJob,root:roomRoot,document,submit:()=>{throw Error('Unexpected submit')}});
+assert.ok(all(roomRoot).some(n=>n.textContent.includes('light room effect')&&n.textContent.includes('Revisions keep these tone settings')));
+assert.ok(!all(roomRoot).some(n=>n.textContent.includes('Dry guitar samples')));
 assert.ok(!all(electricRoot).some(n=>n.textContent.includes('acoustic guitar players')));
 const button=text=>all(root).find(n=>n.tag==='button'&&n.textContent===text);
 let boxes=all(root).filter(n=>n.tag==='input');

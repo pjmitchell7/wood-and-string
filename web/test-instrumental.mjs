@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {instrumentalRequest,instrumentalPassage,instrumentalChanges,candidateBundle,mountInstrumentalCandidates} from './instrumental.mjs';
+import {electricToneForPreset} from './electric-tone.mjs';
 const decoder=new TextDecoder('utf-8',{fatal:true});
 for(const file of ['instrumental.mjs','test-instrumental.mjs','index.html','app.js','sw.js','test-sw-update.cjs'])decoder.decode(fs.readFileSync(new URL(file,import.meta.url)));
 const track={id:'source',name:'Recording',variant:'original',url:'/api/media/source',sha256:'hash'};
@@ -60,6 +61,7 @@ for(const [enabled,availability]of [[false,{ready:true}],[true,{}],[true,{ready:
     electricEnabled:enabled,electricAvailability:()=>availability,submit:async()=>submitted++});
   controls.boxes[0].checked=true;controls.boxes[0].onchange();controls.consent.checked=true;
   controls.instrument.value='electric';await controls.save.onclick();assert.equal(submitted,0);
+  controls.tone.value='room';await controls.save.onclick();assert.equal(submitted,0);
   assert.equal(controls.instrument.children.find(n=>n.value==='electric').disabled,true);
   assert.match(controls.message.textContent,enabled?/not available|unavailable/:/still being tested/);
 }
@@ -70,6 +72,14 @@ electricControls.boxes[0].checked=true;electricControls.boxes[0].onchange();elec
 electricControls.instrument.value='electric';await electricControls.save.onclick();
 assert.deepEqual(electricRequest,{parent_job_id:'parent',interpretation:'published',note_ids:['p1'],instrument:'electric',accept_as_lead:true});
 assert.equal(electricRequest.bass_part,undefined);assert.equal(electricControls.instrument.children.find(n=>n.value==='electric').disabled,false);
+for(const preset of ['clean','room','delay']){
+  electricControls.tone.value=preset;electricControls.instrument.onchange();
+  assert.equal(electricControls.toneLabel.hidden,false);assert.equal(electricControls.tone.disabled,false);
+  await electricControls.save.onclick();assert.deepEqual(electricRequest.electric_tone,electricToneForPreset(preset));
+}
+electricControls.instrument.value='acoustic';electricControls.instrument.onchange();
+assert.equal(electricControls.toneLabel.hidden,true);assert.equal(electricControls.tone.disabled,true);
+await electricControls.save.onclick();assert.equal(electricRequest.electric_tone,undefined);
 
 // Execute actual app candidate completion/callback ownership without media.
 const app=decoder.decode(fs.readFileSync(new URL('./app.js',import.meta.url)));

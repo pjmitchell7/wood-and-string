@@ -1,4 +1,5 @@
 // Explicit edits to estimated events. No playback, inference, or implicit smoothing.
+import {electricToneDescription} from './electric-tone.mjs?v=25';
 export async function restoreSavedPreview({savedId,load,isPending,show}){
   const usable=job=>job?.state==='complete'&&['mixed','refine'].includes(job.request?.kind)&&job.result?.asset&&job.result?.arrangement;
   if(isPending())return;
@@ -88,7 +89,7 @@ export function mountRefinement({job,root,submit,document:doc=globalThis.documen
   panel.append(element('p','Times are seconds from the start of this passage. These are estimated pitches, not a score verified by a musician. No pitch or timing adjustments are available here.'));
   if(job.request.guidance?.accompaniment==='melody-only')panel.append(element('p','This preview keeps your melody-only choice. Bass estimates remain visible as evidence but will not be rendered.'));
   if(job.request.instrument==='jazz-bass')panel.append(element('p',job.request.performers===2?'This experimental Jazz Bass preview keeps upper melody and lower bass foundation as separate parts.':`This experimental Jazz Bass preview keeps your choice to follow the estimated ${job.request.bass_part==='bass-line'?'bass line':'melody'}. The other part remains visible as evidence but will not be rendered.`));
-  if(job.request.instrument==='electric')panel.append(element('p','This experimental preview uses dry Electric samples, with no added amplifier, reverb or sustain. The selected instrument does not identify the source guitar; estimated notes and musical fidelity still need review.'));
+  if(job.request.instrument==='electric')panel.append(element('p',`${electricToneDescription(job.request.electric_tone)} Revisions keep these tone settings. Tone processing cannot recover missing notes or longer source sustain. The selected instrument does not identify the source guitar; estimated notes and musical fidelity still need review.`));
   const list=element('div');list.style.maxHeight='20rem';list.style.overflowY='auto';
   const boxes=[];
   for(const note of [...draft.notes].sort((a,b)=>a.start-b.start||a.id.localeCompare(b.id))){

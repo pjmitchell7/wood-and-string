@@ -4,6 +4,8 @@ audio/research/basic-pitch/notices/spotify-* -text
 audio/research/basic_pitch_controls_v2.json -text
 # Exact previous service worker, including its original trailing blank line.
 web/fixtures/sw-v*.js -text whitespace=-blank-at-eof
+# The v24 snapshot also preserves its literal CRLF bytes.
+web/fixtures/sw-v24.js -text whitespace=cr-at-eol,-blank-at-eof
 # Preserve the exact bytes hashed by the real-guitar and bass experiments.
 audio/growlybass.py -text
 audio/reference_notes.py -text

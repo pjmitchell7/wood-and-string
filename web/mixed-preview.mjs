@@ -1,4 +1,5 @@
 // The form starts a background job only. Playback is always a separate action.
+import {normalizeElectricTone,electricToneLabel} from './electric-tone.mjs?v=25';
 export function canPreviewMixed(source) {
   return Boolean(source?.url && ['original','Original'].includes(source.variant) &&
     ['audio/wav','audio/mpeg','audio/mp4','audio/aac','audio/flac','audio/webm'].includes(source.type));
@@ -20,11 +21,13 @@ export function previewGuidance(value={},performers=1){
 export function previewSelection(value={},performers=1){
   const instrument=value.instrument??'acoustic';
   if(!['acoustic','jazz-bass','electric'].includes(instrument))throw Error('Choose acoustic guitar, experimental Electric guitar or Jazz Bass.');
+  if(instrument!=='electric'&&value.electric_tone!==undefined)throw Error('Tone settings require Electric guitar.');
   if(instrument==='acoustic')return {instrument};
   if(instrument==='electric'){
     if(![1,2].includes(performers))throw Error('Choose one or two Electric guitarists.');
     if(value.bass_part!==undefined)throw Error('Bass part choices require Jazz Bass.');
-    return {instrument};
+    const tone=normalizeElectricTone(value.electric_tone);
+    return tone?{instrument,electric_tone:tone}:{instrument};
   }
   const bass_part=value.bass_part??(performers===2?'melody-and-bass':'melody');
   if(!(performers===2?['melody-and-bass']:['melody','bass-line']).includes(bass_part))throw Error('Choose a bass part for the selected number of players.');
@@ -36,7 +39,7 @@ export function previewChoice(request){
   const guidance=previewGuidance(request.guidance,request.performers);
   if(selected.instrument==='electric'){
     if(guidance.accompaniment!=='melody-and-bass')throw Error('Electric previews use estimated melody and bass together.');
-    return request.performers===2?'Experimental dry Electric guitar · two players: upper estimated melody and low estimated bass foundation.':'Experimental dry Electric guitar · one player: estimated melody and bass together.';
+    return `Experimental ${electricToneLabel(selected.electric_tone)} · ${request.performers===2?'two players: upper estimated melody and low estimated bass foundation.':'one player: estimated melody and bass together.'}`;
   }
   return guidance.accompaniment==='melody-only'?'Acoustic guitar · estimated melody only; bass omitted.':'Acoustic guitar · estimated melody with bass.';
 }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import * as tones from './electric-tone.mjs';
 import {mixedPreviewRequest,previewSelection,previewChoice,previewGuidance} from './mixed-preview.mjs';
 // Buffer.toString silently replaces malformed bytes; web source must be strict UTF-8.
 const strictUTF8=new TextDecoder('utf-8',{fatal:true});
@@ -29,7 +30,7 @@ const source=app.slice(app.indexOf('function selectMixed('),app.indexOf("$('mixe
 const fields=new Map();
 const $=id=>{if(!fields.has(id))fields.set(id,{value:id==='mixedInstrument'?'acoustic':id==='mixedPerformers'?'1':'',options:[{},{}],scrollIntoView(){},focus(){}});return fields.get(id)};
 let calls=0,response={bass_ready:true,bass_reason:''};
-const scope={$ ,mixedSource:null,tracks:[original],previewGuidance,previewSelection,previewChoice,
+const scope={...tones,restoredElectricTone:undefined,$ ,mixedSource:null,tracks:[original],previewGuidance,previewSelection,previewChoice,
   ELECTRIC_PREVIEW_ENABLED:false,ELECTRIC_TESTING_REASON:'Electric is still being tested.',electricAvailability:{ready:false},
   bassAvailability:{ready:false,reason:'Not ready'},apiJSON:async url=>{assert.equal(url,'/api/status');calls++;return response},
   document:{createElement:()=>({textContent:''})}};

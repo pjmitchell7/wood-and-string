@@ -10,8 +10,7 @@ import uuid
 
 from analysis_evidence import AnalysisEvidence, digest, work_directory
 from audio.performance import Note, Performance
-from audio.preview_instruments import selection_fields, arrange_selected, BASS_RENDER_VERSION
-from audio.render import RENDER_VERSION
+from audio.preview_instruments import selection_fields, arrange_selected, renderer_version
 from audio.instrumental_analysis import VERSION as PIPELINE_VERSION
 from audio.instrumental_runtime import PINS
 
@@ -172,7 +171,7 @@ def prepare_arrangement(library,value):
               start_seconds=parent['request']['start_seconds'],end_seconds=parent['request']['end_seconds'],
               interpretation=interpretation,note_ids=sorted(ids),accept_as_lead=True,
               role_assignment='user-selected-lead',review_version=VERSION,
-              renderer_version=BASS_RENDER_VERSION if selection else RENDER_VERSION,**selection)
+              renderer_version=renderer_version(selection),**selection)
     return dict(spec=spec,parent=parent,bundle=bundle,source=source,selection=selection)
 
 def arrange_review(prepared):
@@ -184,7 +183,7 @@ def arrange_review(prepared):
         notes.append(Note(event['id'],event['start'],event['end'],event['pitch'],80,'melody',
                           event['mean_note_activation'],contour=tuple((p['sample'],p['midi']) for p in event.get('contour_candidates',[]))))
     performance=Performance(bundle['source_id'],44100,notes)
-    arrangement=arrange_selected(performance,1,None,prepared['selection'])
+    arrangement=arrange_selected(performance,1,None,prepared['selection'],render_origin_sample=bundle['origin'])
     arrangement['render_origin_sample']=bundle['origin']
     arrangement['candidate_review']=dict(version=VERSION,parent_job_id=spec['parent_job_id'],
         parent_result_sha256=spec['parent_result_sha256'],source_part=deepcopy(bundle['source_part']),
@@ -197,6 +196,8 @@ def arrange_review(prepared):
     arrangement['adaptations'].extend(dict(note_id=e['id'],kind='candidate-not-selected',
         reason='Unselected uncertain candidate; retained in the parent review, not rendered') for e in events if e['id'] not in ids)
     if not arrangement['notes']:raise ValueError('None of the selected notes fit this instrument. Review the listed range constraints.')
+    if prepared['selection'].get('instrument')=='electric' and arrangement.get('renderable') is not True:
+        raise ValueError('The selected notes could not all be assigned to this Electric lead. Review the omissions before rendering.')
     return arrangement
 
 def _receipt(path,receipt,prefix,maximum):

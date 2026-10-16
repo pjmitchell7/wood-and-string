@@ -7,9 +7,8 @@ import uuid
 
 from audio.preferences import normalize_guidance, guidance_is_default
 from audio.refinement import performance_from_dict, normalize_operations, refine, VERSION as POLICY_VERSION
-from audio.render import RENDER_VERSION
 from audio.preview_instruments import (validate_saved_selection, preview_guidance,
-                                       required_roles, arrange_selected, BASS_RENDER_VERSION)
+                                       required_roles, arrange_selected, renderer_version)
 
 VERSION = 1
 MAX_PARENT_BYTES = 12 * 1024 ** 2
@@ -65,10 +64,25 @@ def prepare_refinement(library, parent_job_id, operations):
                 raise ValueError('The saved notes extend outside this passage.')
         performers = request['performers']
         selection = validate_saved_selection(request)
-        if selection and (arrangement.get('instrument') != 'jazz-bass'
+        if selection.get('instrument')=='jazz-bass' and (arrangement.get('instrument') != 'jazz-bass'
                           or arrangement.get('part_selection') != selection['bass_part']
                           or arrangement.get('profile_version') != selection['bass_profile_version']):
             raise ValueError('The saved bass preview has an invalid instrument or part choice.')
+        if selection.get('instrument')=='electric':
+            actual_asset=library.get(asset['id'])
+            if (asset.get('sha256')!=actual_asset['sha256']
+                    or asset.get('source_id')!=actual_asset['source_id']
+                    or actual_asset['source_id']!=source['source_id']):
+                raise ValueError('The saved Electric preview does not match its stored audio asset.')
+            if (arrangement.get('instrument')!='electric' or arrangement.get('renderable') is not True
+                    or arrangement.get('planner_version')!=selection['electric_planner_version']
+                    or arrangement.get('profile_version')!=selection['electric_profile_version']):
+                raise ValueError('The saved Electric preview has an invalid arrangement profile.')
+            from render_evidence import RenderEvidence
+            try:
+                RenderEvidence(library).verify(result['render_evidence'],wav_sha256=actual_asset['sha256'],arrangement=arrangement)
+            except (ValueError,OSError) as error:
+                raise ValueError('The saved Electric dry evidence failed verification. Make a new preview before revising it.') from error
         guidance = preview_guidance(request.get('guidance'), performers, selection)
         normalized = normalize_operations(operations)
         if not normalized:
@@ -77,8 +91,9 @@ def prepare_refinement(library, parent_job_id, operations):
         if not corrected.notes:
             raise ValueError('Keep at least one note in the revised passage.')
         roles = {n.role for n in corrected.notes}
-        if selection and not set(required_roles(selection)) <= roles:
-            raise ValueError('Keep at least one note in each selected Bass part.')
+        if selection and not set(required_roles(selection,performers=performers)) <= roles:
+            raise ValueError('Keep at least one note in each selected Bass part.' if selection.get('instrument')=='jazz-bass'
+                             else 'Keep at least one note in each selected Electric part.')
         if performers == 2 and not {'melody', 'bass'} <= roles:
             raise ValueError('Two guitarists need both melody and bass. Keep a note in each part.')
         if guidance['accompaniment'] == 'melody-only' and 'melody' not in roles:
@@ -86,7 +101,7 @@ def prepare_refinement(library, parent_job_id, operations):
         spec = dict(kind='refine', parent_job_id=parent_job_id, parent_result_sha256=digest,
                     asset_id=source['id'], sha256=source['sha256'], performers=performers,
                     start_seconds=float(start), end_seconds=float(end),
-                    renderer_version=BASS_RENDER_VERSION if selection else RENDER_VERSION, refinement_version=VERSION,
+                    renderer_version=renderer_version(selection), refinement_version=VERSION,
                     refinement_policy_version=POLICY_VERSION,
                     operations=normalized, **selection)
         if not guidance_is_default(guidance):
@@ -100,7 +115,8 @@ def prepare_refinement(library, parent_job_id, operations):
 def arrange_refinement(prepared):
     spec = prepared['spec']
     selection = validate_saved_selection(spec)
-    arrangement = arrange_selected(prepared['corrected'], spec['performers'], spec.get('guidance'), selection)
+    arrangement = arrange_selected(prepared['corrected'], spec['performers'], spec.get('guidance'), selection,
+                                   render_origin_sample=prepared['origin'])
     # Never relabel a manual interpretation as the original analyzer evidence.
     arrangement['source'] = asdict(prepared['original'])
     arrangement['refinement_source'] = asdict(prepared['corrected'])

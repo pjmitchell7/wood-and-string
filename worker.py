@@ -10,12 +10,15 @@ import threading
 import ctypes
 import os
 import math
+import sqlite3
 from library import Library
+from render_evidence import RenderEvidence, reconcile_render_evidence
 from audio.performance import Note, Performance, arrange
 from audio.render import render, RENDER_VERSION
 from audio.preview_instruments import (validate_saved_selection, arrange_selected,
-                                       required_roles, BASS_RENDER_VERSION)
+                                       required_roles, renderer_version)
 from audio.bass_render import render as render_bass
+from audio.electric_preview_render import render as render_electric
 from audio.managed_process import run_worker, Cancelled, ManagedProcessError, parent_pipe_lost
 
 MAX_ANALYSIS_BYTES = 4*1024**2
@@ -88,9 +91,10 @@ def run(root, identity, parent_gone=lambda:False):
             library.update_job(identity,'complete',1,result=result)
             return
         selection=validate_saved_selection(spec)
+        instrument=selection.get('instrument','acoustic')
         if selection and spec['kind'] not in ('mixed','refine','instrumental-arrange'):
-            raise ValueError('Bass selection is only supported for mixed previews and their revisions.')
-        if spec.get('renderer_version') != (BASS_RENDER_VERSION if selection else RENDER_VERSION):
+            raise ValueError('Instrument selection is only supported for mixed previews and their revisions.')
+        if spec.get('renderer_version') != renderer_version(selection):
             raise ValueError('The sampled renderer changed. Start a new preview.')
         analysis_metrics=None
         if cancelled(): raise InterruptedError('Cancelled')
@@ -101,8 +105,9 @@ def run(root, identity, parent_gone=lambda:False):
             if prepared['spec']!=spec:raise ValueError('The saved candidate review changed. Select the notes again.')
             source=prepared['source'];source_id=source['source_id'];origin=prepared['bundle']['origin']
             arrangement=arrange_review(prepared)
-            kind='instrumental-selected-'+('bass' if selection else 'acoustic')
+            kind='instrumental-selected-'+{'acoustic':'acoustic','jazz-bass':'bass','electric':'electric'}[instrument]
             filename=source['title']+' - selected instrumental notes.wav'
+            if instrument=='electric':filename=source['title']+' - selected instrumental Electric notes.wav'
             notice='Your selected uncertain candidates assigned as a lead part. Source instruments remain unknown; fixed note dynamics and estimated endings are not expressive transcription. No source waveform is mixed into this render.'
         elif spec['kind']=='refine':
             from preview_refinement import prepare_refinement, arrange_refinement
@@ -114,9 +119,12 @@ def run(root, identity, parent_gone=lambda:False):
             arrangement=arrange_refinement(prepared)
             kind='mixed-refinement-'+str(spec['performers'])
             filename=source['title']+' - revised acoustic preview.wav'
-            if selection:
+            if instrument=='jazz-bass':
                 kind='bass-refinement-'+str(spec['performers'])+'-'+selection['bass_part']
                 filename=source['title']+' - revised Jazz Bass preview.wav'
+            elif instrument=='electric':
+                kind='electric-refinement-'+str(spec['performers'])
+                filename=source['title']+' - revised Electric preview.wav'
             notice='Revised from your explicit note edits. Original analysis and previous preview are preserved. No new automatic transcription or source audio is mixed into this render.'
         elif spec['kind']=='mixed':
             from audio.analysis_runtime import require_runtime
@@ -138,13 +146,13 @@ def run(root, identity, parent_gone=lambda:False):
             analysis_request={'source_path':str(path.resolve()),'source_sha256':source['sha256'],'source_id':source['source_id'],
                  'start_seconds':spec['start_seconds'],'end_seconds':spec['end_seconds'],
                  'modeldir':str(Path(runtime['modeldir']).resolve()),'result_path':str(analysis.resolve())}
-            if selection: analysis_request['required_roles']=list(required_roles(selection))
+            if selection: analysis_request['required_roles']=list(required_roles(selection,performers=spec['performers']))
             response=run_worker('audio.mixed_analysis', analysis_request,
                 python=runtime['python'],cancel=cancelled,progress=analysis_progress,
                 wall_seconds=min(180,max(.001,240-(time.monotonic()-started))),memory_bytes=2*1024**3)
             if cancelled(): raise InterruptedError('Cancelled')
             performance,report,origin=load_analysis(analysis,response['result'],source['source_id'],spec['start_seconds'],spec['end_seconds'],
-                                                     roles=required_roles(selection))
+                                                     roles=required_roles(selection,performers=spec['performers']))
             analysis_metrics=response['metrics']
             report['pipeline_version']=spec['pipeline_version'];report['runtime_version']=spec['runtime_version']
             source_id=source['source_id'];kind='mixed-preview-'+str(spec['performers'])
@@ -174,25 +182,63 @@ def run(root, identity, parent_gone=lambda:False):
         else:
             raise ValueError('Unsupported preview job type.')
         if spec['kind']=='mixed':
-            arrangement=arrange_selected(performance,spec['performers'],spec.get('guidance'),selection)
-            if selection:
+            arrangement=arrange_selected(performance,spec['performers'],spec.get('guidance'),selection,render_origin_sample=origin)
+            if instrument=='jazz-bass':
                 kind='bass-preview-'+str(spec['performers'])+'-'+selection['bass_part']
                 filename=source['title']+' - Jazz Bass '+selection['bass_part']+'.wav'
                 notice='Experimental sampled Jazz Bass preview following estimated vocal melody and/or bass. No source audio is mixed in. Source timing is retained; octave changes and omissions are listed. Moderate sampled dynamics only; chords, phrasing, fingering and musical fidelity remain unaccepted.'
+            elif instrument=='electric':
+                kind='electric-preview-'+str(spec['performers'])
+                filename=source['title']+' - dry Electric '+('solo' if spec['performers']==1 else 'duet')+'.wav'
+                notice='Experimental dry Electric preview following estimated melody and bass. Source timing is retained; octave changes and omissions are listed. No source audio, amplifier, reverb, or added sustain is mixed in. Fixed sample variation and uncalibrated dynamics; instrumental identity, phrasing and musical fidelity remain unaccepted.'
             elif spec.get('guidance',{}).get('accompaniment')=='melody-only':
                 kind='mixed-preview-1-melody-only'
                 filename=source['title']+' - estimated melody only.wav'
                 notice+=' Estimated bass is omitted at your request.'
         elif spec['kind'] not in ('refine','instrumental-arrange'):
             arrangement=arrange(performance,spec['performers'])
+        if cancelled():raise InterruptedError('Cancelled')
+        if instrument=='electric':
+            players=sorted({n['player'] for n in arrangement['notes']})
+            valid_origin=type(arrangement.get('render_origin_sample')) is int and arrangement['render_origin_sample']==origin
+            valid_players=arrangement.get('performers')==spec['performers'] and players==list(range(1,spec['performers']+1))
+            if arrangement.get('renderable') is not True or not valid_origin or not valid_players:
+                error=('The Electric arrangement source passage changed. Start a new preview.' if not valid_origin else
+                       'These notes could not be assigned to the requested Electric players. Review the omissions or choose another passage.')
+                refusal={'version':1,'stage':'arrangement','status':'violates',
+                    'expected':{'renderable':True,'render_origin_sample':origin,'performers':spec['performers'],
+                                'players':list(range(1,spec['performers']+1))},
+                    'observed':{'renderable':arrangement.get('renderable'),
+                                'render_origin_sample':arrangement.get('render_origin_sample'),
+                                'performers':arrangement.get('performers'),'players':players,
+                                'issues':arrangement.get('issues',[]),
+                                'omitted_note_ids':[a['note_id'] for a in arrangement.get('adaptations',[]) if a.get('kind')=='omission']},
+                    'source_clock':{'sample_rate':44100,'origin_sample':origin,'end_sample':round(spec['end_seconds']*44100)},
+                    'units':{'render_origin_sample':'absolute source samples','sample_rate':'Hz','performers':'players'},
+                    'scope':'Planner constraints and source-clock consistency only; no musical judgment. No rendering occurred.',
+                    'next_discriminating_check':('Compare the requested passage origin with the origin supplied before planning; do not retime retained notes.' if not valid_origin else
+                        'Inspect the retained omission and issue records against source gates, available strings and requested players before choosing a different passage or player count.')}
+                library.update_job(identity,'failed',result={'arrangement':arrangement,'analysis':report,'refusal':refusal},error=error)
+                return
         if spec['kind'] in ('mixed','refine') and spec['performers']==2:
             players={n['player'] for n in arrangement['notes']}
             if players!={1,2}:
                 raise ValueError('This passage did not yield both melody and bass for two guitarists. Try a different passage or one guitarist.')
-        arrangement['render_origin_sample']=origin
-        renderer=render_bass if selection else render
+        if instrument=='electric':
+            if spec['kind']!='mixed':
+                notice+=' Dry Electric samples only: no amplifier, reverb, added sustain or source waveform; dynamics and musical fidelity remain unaccepted.'
+        else:
+            arrangement['render_origin_sample']=origin
+        renderer={'acoustic':render,'jazz-bass':render_bass,'electric':render_electric}[instrument]
         metrics=renderer(arrangement,output,cancel=cancelled,progress=lambda p:library.update_job(identity,'running',.65+p*.35 if report else p))
         if cancelled(): raise InterruptedError('Cancelled')
+        evidence=None
+        if instrument=='electric':
+            # The private sidecar retains the underlying adapter's prototype
+            # receipt. Wrapper metrics are a different schema and never replace it.
+            evidence=RenderEvidence(library).publish(output.with_suffix('.wav.dry.f32'),
+                output.with_suffix('.wav.receipt.json'),wav_path=output,arrangement=arrangement,cancel=cancelled)
+            if cancelled(): raise InterruptedError('Cancelled')
         item=library.publish(output,filename,'audio/wav',kind=kind,source_id=source_id)
         metrics['seconds']=time.monotonic()-started
         metrics['uses_gpu']=False
@@ -207,6 +253,7 @@ def run(root, identity, parent_gone=lambda:False):
             if ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(),ctypes.byref(counters),counters.cb):
                 metrics['peak_working_set_bytes']=counters.PeakWorkingSetSize
         result={'asset':item,'arrangement':arrangement,'metrics':metrics,'notice':notice,'analysis':report}
+        if evidence is not None:result['render_evidence']=evidence
         library.update_job(identity,'complete',1,result=result)
     except (InterruptedError,Cancelled):
         library.update_job(identity,'cancelled',error='Preview cancelled. Your original files are unchanged.')
@@ -218,11 +265,29 @@ def run(root, identity, parent_gone=lambda:False):
         (library.stage/(identity+'.error.txt')).write_text(traceback.format_exc(),encoding='utf-8')
         library.update_job(identity,'failed',error=f'Preview failed: {type(e).__name__}. Local error details saved.')
     finally:
-        for path in (output,cancel,analysis,analysis_partial,decoded,decoded_partial):
-            if path.exists(): path.unlink()
+        attention=[]
+        for path in (output,cancel,analysis,analysis_partial,decoded,decoded_partial,
+                     output.with_suffix('.wav.partial'),output.with_suffix('.wav.float.partial'),
+                     output.with_suffix('.wav.dry.f32'),output.with_suffix('.wav.receipt.json'),
+                     output.with_suffix('.wav.receipt.partial')):
+            try:path.unlink(missing_ok=True)
+            except (OSError,ValueError):attention.append({'operation':'remove-job-staging','file':path.name})
         from analysis_evidence import cleanup_work,reconcile_evidence
-        cleanup_work(library,identity)
-        if job['request']['kind']=='instrumental':reconcile_evidence(library)
+        maintenance=[('analysis-work',lambda:cleanup_work(library,identity)),
+                     ('render-evidence',lambda:reconcile_render_evidence(library))]
+        if job['request']['kind']=='instrumental':maintenance.append(('analysis-evidence',lambda:reconcile_evidence(library)))
+        # run() is called while the outer entry point owns worker.lock. Strict
+        # evidence maintenance must fail closed, never replace a completed result
+        # or broaden deletion after finding a malformed saved reference.
+        for name,action in maintenance:
+            try:action()
+            except (ValueError,OSError,sqlite3.Error) as error:
+                attention.append({'operation':name,'error_type':type(error).__name__})
+        if attention:
+            try:
+                with (library.root/(identity+'.cleanup-attention.json')).open('x',encoding='utf-8') as stream:
+                    json.dump({'job_id':identity,'attention':attention},stream,sort_keys=True)
+            except OSError:pass
 
 if __name__=='__main__':
     gone=threading.Event()

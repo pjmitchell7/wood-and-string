@@ -132,8 +132,9 @@ class MixedAPITests(unittest.TestCase):
         with mock.patch('server.MIXED_PIPELINE_VERSION','next-pipeline'): third=self.post().json()
         self.assertNotIn(third['id'],(first['id'],second['id']))
         self.children[-1].done=True
-        with mock.patch('server.RENDER_VERSION','next-renderer'): fourth=self.post().json()
+        with mock.patch('audio.preview_instruments.ACOUSTIC_RENDER_VERSION','next-renderer'): fourth=self.post().json()
         self.assertNotIn(fourth['id'],(first['id'],second['id'],third['id']))
+        self.assertEqual(fourth['request']['renderer_version'],'next-renderer')
 
     def test_original_and_supported_format_and_space(self):
         unsupported=self.app.state.library.stage/'unsupported';unsupported.write_bytes(b'unsupported-container')

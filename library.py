@@ -68,7 +68,22 @@ class Library:
             suffix=path.name[36:]
             try: uuid.UUID(path.name[:36])
             except ValueError: continue
-            if path.is_file() and suffix in ('.partial','.wav.partial','.wav.float.partial','.wav','.cancel','.analysis.json','.analysis.partial','.analysis.decoded.wav','.analysis.decoded.wav.decode.partial'):
+            if path.is_file() and suffix in ('.partial','.wav.partial','.wav.float.partial','.wav',
+                    '.wav.dry.f32','.wav.receipt.json','.wav.receipt.partial',
+                    '.cancel','.analysis.json','.analysis.partial','.analysis.decoded.wav','.analysis.decoded.wav.decode.partial'):
+                removed+=path.stat().st_size
+                path.unlink()
+        return removed
+
+    def cleanup_render_staging(self, identity):
+        """After reaping this worker only; concurrent uploads remain untouched."""
+        if type(identity) is not str or str(uuid.UUID(identity))!=identity:
+            raise ValueError('Invalid render job identity')
+        removed=0
+        for suffix in ('.wav','.wav.partial','.wav.float.partial',
+                       '.wav.dry.f32','.wav.receipt.json','.wav.receipt.partial'):
+            path=self.stage/(identity+suffix)
+            if path.is_file():
                 removed+=path.stat().st_size
                 path.unlink()
         return removed

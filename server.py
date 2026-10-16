@@ -24,7 +24,7 @@ from processing_queue import ProcessingQueue, QueueConflict, QueueFull
 from processing_resources import Admission
 from audio.preferences import normalize_guidance, guidance_is_default
 from audio.render import RENDER_VERSION
-from audio.preview_instruments import selection_fields, preview_guidance, BASS_RENDER_VERSION
+from audio.preview_instruments import selection_fields, preview_guidance, renderer_version
 from audio.mixed_analysis import PIPELINE_VERSION as MIXED_PIPELINE_VERSION, INPUT_MIMES
 
 ROOT = Path(__file__).parent
@@ -39,6 +39,10 @@ def mixed_runtime_status():
 
 def bass_runtime_status():
     from audio.growlybass import bank_status
+    return bank_status()
+
+def electric_runtime_status():
+    from audio.electric_preview_runtime import bank_status
     return bank_status()
 
 def instrumental_runtime_status():
@@ -61,6 +65,24 @@ def create_app(root=None):
     preview_lock = asyncio.Lock()
     processing = ProcessingQueue(library)
     admission = Admission()
+    render_cleanup_attention = None
+
+    def reconcile_private_renders():
+        # Maintenance already runs under worker.lock. A damaged reference must
+        # preserve evidence without preventing unrelated playback or startup.
+        nonlocal render_cleanup_attention
+        from render_evidence import reconcile_render_evidence
+        try:
+            reconcile_render_evidence(library)
+            render_cleanup_attention = None
+        except (ValueError,OSError,KeyError,TypeError,sqlite3.Error):
+            render_cleanup_attention = 'Some saved Electric evidence needs review and has been preserved.'
+
+    def require_instrument(spec):
+        if spec.get('instrument')=='jazz-bass' and not bass_runtime_status().get('ready'):
+            raise HTTPException(503,'The experimental Jazz Bass bank is not ready on this laptop.')
+        if spec.get('instrument')=='electric' and not electric_runtime_status().get('ready'):
+            raise HTTPException(503,'The experimental Electric bank is not ready on this laptop.')
 
     def serialized_preview(handler):
         @wraps(handler)
@@ -86,6 +108,8 @@ def create_app(root=None):
                     with library.exclusive('worker.lock'):
                         cleanup_work(library,identity)
                         reconcile_evidence(library)
+                        library.cleanup_render_staging(identity)
+                        reconcile_private_renders()
                 except OSError:raise HTTPException(409,'The previous analysis is finishing cleanup. Try again shortly.')
                 processes.pop(identity, None)
     @asynccontextmanager
@@ -98,6 +122,7 @@ def create_app(root=None):
                 from analysis_evidence import reconcile_work, reconcile_evidence
                 reconcile_work(library)
                 reconcile_evidence(library)
+                reconcile_private_renders()
                 processing.recover()
             scheduler = asyncio.create_task(processing_loop())
             try: yield
@@ -121,10 +146,19 @@ def create_app(root=None):
                 if result['request'].get('kind')=='instrumental':
                     from instrumental_preview import checked_candidates
                     checked_candidates(library,result);valid=True
-                else:valid=library.verify(result['result']['asset']['id'])
+                else:
+                    asset=library.get(result['result']['asset']['id'])
+                    valid=library.verify(asset['id'])
+                    if valid and result['request'].get('instrument')=='electric':
+                        from render_evidence import RenderEvidence
+                        if asset['sha256']!=result['result']['asset']['sha256']:
+                            raise ValueError('Saved Electric WAV reference changed')
+                        RenderEvidence(library).verify(result['result']['render_evidence'],wav_sha256=asset['sha256'],
+                                                       arrangement=result['result']['arrangement'])
             except (KeyError,TypeError,ValueError,OSError): valid=False
             if not valid:
-                retained=result['result'] if result['request'].get('kind')=='instrumental' else None
+                retained=result['result'] if (result['request'].get('kind')=='instrumental'
+                         or result['request'].get('instrument')=='electric') else None
                 library.update_job(identity,'interrupted',result=retained,error='Saved preview failed verification. Run the preview again to recover it.')
                 result=library.job(identity)
         return result
@@ -155,11 +189,14 @@ def create_app(root=None):
     def status():
         runtime=mixed_runtime_status()
         bass=bass_runtime_status()
+        electric=electric_runtime_status()
         instrumental=instrumental_runtime_status()
         return dict(ready=True, mode='this laptop only', conversion='experimental isolated melody and mixed melody/bass previews',
                     automatic_extraction=False, isolated_melody_ready=True,
                     mixed_ready=bool(runtime.get('ready')), mixed_reason=runtime.get('reason'),
                     bass_ready=bool(bass.get('ready')), bass_reason=bass.get('reason'),
+                    electric_ready=bool(electric.get('ready')), electric_reason=electric.get('reason'),
+                    render_evidence_attention=render_cleanup_attention,
                     instrumental_ready=bool(instrumental.get('ready')), instrumental_reason=instrumental.get('reason'))
 
     async def admit_instrumental(spec,space):
@@ -221,8 +258,7 @@ def create_app(root=None):
             prepared=prepare_arrangement(library,json.loads(await small_body(request,1024**2)))
         except (ValueError,KeyError,TypeError,AttributeError) as error:raise HTTPException(400,str(error))
         spec=prepared['spec']
-        if spec.get('instrument')=='jazz-bass' and not bass_runtime_status().get('ready'):
-            raise HTTPException(503,'The experimental Jazz Bass bank is not ready on this laptop.')
+        require_instrument(spec)
         return await admit_instrumental(spec,128*1024**2)
 
     @app.get('/session')
@@ -387,15 +423,17 @@ def create_app(root=None):
         if not runtime.get('ready'): raise HTTPException(503,runtime.get('reason') or 'The local mixed-preview runtime is not ready.')
         version=runtime.get('manifest',{}).get('runtime_version')
         if not isinstance(version,str) or not version: raise HTTPException(503,'The local mixed-preview runtime needs verification.')
-        if frozen is None and selection and not bass_runtime_status().get('ready'):
-            raise HTTPException(503,'The experimental Jazz Bass bank is not ready on this laptop.')
+        if frozen is None: require_instrument(selection)
         spec={'kind':'mixed','asset_id':asset['id'],'sha256':asset['sha256'],
               'performers':performers,'start_seconds':start,'end_seconds':end,
               'pipeline_version':MIXED_PIPELINE_VERSION,'runtime_version':version,
-              'renderer_version':BASS_RENDER_VERSION if selection else RENDER_VERSION,**selection}
+              'renderer_version':renderer_version(selection),**selection}
         if not guidance_is_default(guidance): spec['guidance']=guidance
         if frozen is not None:
             for field in ('pipeline_version','renderer_version'): spec[field]=frozen[field]
+            if selection.get('instrument','acoustic')==frozen.get('instrument','acoustic'):
+                for field in ('bass_planner_version','bass_profile_version','electric_planner_version','electric_profile_version'):
+                    if field in selection: spec[field]=frozen[field]
         return spec
 
     def processing_receipt(row):
@@ -599,8 +637,7 @@ def create_app(root=None):
             spec = prepared['spec']
         except (ValueError, KeyError, TypeError, AttributeError) as error:
             raise HTTPException(400, str(error))
-        if spec.get('instrument') == 'jazz-bass' and not bass_runtime_status().get('ready'):
-            raise HTTPException(503,'The experimental Jazz Bass bank is not ready on this laptop.')
+        require_instrument(spec)
         identity = str(uuid.uuid5(uuid.NAMESPACE_URL, json.dumps(spec, sort_keys=True)))
         try:
             prior = checked_job(identity)

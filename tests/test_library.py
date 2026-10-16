@@ -55,6 +55,30 @@ class LibraryTests(unittest.TestCase):
         self.assertTrue(all(not path.exists() for path in owned))
         self.assertEqual(unrelated.read_bytes(),b'preserve')
 
+    def test_reconcile_electric_staging_after_interrupted_publication(self):
+        identity=str(uuid.uuid4())
+        scratch=[self.library.stage/(identity+suffix) for suffix in
+                 ('.wav.dry.f32','.wav.receipt.json','.wav.receipt.partial')]
+        for path in scratch:path.write_bytes(b'owned')
+        unknown=self.library.stage/(identity+'.wav.unknown');unknown.write_bytes(b'preserve')
+        private=self.library.root/'render-evidence';private.mkdir()
+        retained=private/('a'*64+'.f32');retained.write_bytes(b'retained')
+        self.assertEqual(self.library.reconcile_staging(),15)
+        self.assertTrue(all(not path.exists() for path in scratch))
+        self.assertEqual(unknown.read_bytes(),b'preserve')
+        self.assertEqual(retained.read_bytes(),b'retained')
+
+    def test_reaped_render_cleanup_keeps_concurrent_upload_and_other_worker(self):
+        identity=str(uuid.uuid4());other=str(uuid.uuid4())
+        owned=[self.library.stage/(identity+suffix) for suffix in
+               ('.wav','.wav.dry.f32','.wav.receipt.json','.wav.receipt.partial')]
+        for path in owned:path.write_bytes(b'owned')
+        keep=[self.library.stage/(identity+'.partial'),self.library.stage/(other+'.wav.dry.f32')]
+        for path in keep:path.write_bytes(b'preserve')
+        self.assertEqual(self.library.cleanup_render_staging(identity),20)
+        self.assertTrue(all(not path.exists() for path in owned))
+        self.assertTrue(all(path.read_bytes()==b'preserve' for path in keep))
+
 class ApiTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()

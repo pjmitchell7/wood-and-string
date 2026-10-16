@@ -77,7 +77,7 @@ class BassPreview(unittest.TestCase):
     def test_explicit_selection_and_acoustic_identity(self):
         self.assertEqual(selection_fields({},1),{})
         self.assertEqual(selection_fields({'instrument':'acoustic'},2),{})
-        for value in ({'instrument':'electric'},{'bass_part':'melody'},
+        for value in ({'instrument':'piano'},{'bass_part':'melody'},
                       {'instrument':'jazz-bass','bass_part':'melody-and-bass'}):
             with self.subTest(value=value),self.assertRaises(ValueError): selection_fields(value,1)
         for value in (None,[],['other'],['bass','melody'],['melody','melody']):
@@ -93,7 +93,7 @@ class BassPreview(unittest.TestCase):
         self.library.update_job(job['id'],'failed',error='Test terminal'); self.children[-1].done=True
         duo = self.post(performers=2).json()
         self.assertNotEqual(duo['id'],job['id']);self.assertEqual(duo['request']['bass_part'],'melody-and-bass')
-        for changes in ({'instrument':'electric'},{'bass_part':'unknown'},{'performers':2,'bass_part':'bass-line'},
+        for changes in ({'instrument':'piano'},{'bass_part':'unknown'},{'performers':2,'bass_part':'bass-line'},
                         {'guidance':{'accompaniment':'melody-only'}}):
             self.assertEqual(self.post(**changes).status_code,400)
         with patch('server.bass_runtime_status',return_value={'ready':False}):

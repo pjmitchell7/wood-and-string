@@ -111,8 +111,24 @@ class InstrumentalPreview(unittest.TestCase):
         for value in (False,None,1,'true'):
             with self.subTest(value=value),self.assertRaises(ValueError):prepare_arrangement(self.library,self.request(accept_as_lead=value))
         missing=self.request();del missing['accept_as_lead']
-        for value in (missing,self.request(extra=True),self.request(instrument='electric'),self.request(parent_job_id='../parent')):
+        for value in (missing,self.request(extra=True),self.request(instrument='piano'),self.request(parent_job_id='../parent')):
             with self.assertRaises(ValueError):prepare_arrangement(self.library,value)
+
+    def test_electric_candidate_selection_keeps_unknown_source_and_origin_before_planning(self):
+        before=copy.deepcopy(self.result)
+        prepared=prepare_arrangement(self.library,self.request(instrument='electric'))
+        arrangement=arrange_review(prepared)
+        self.assertEqual(prepared['spec']['instrument'],'electric')
+        self.assertTrue(arrangement['renderable'])
+        self.assertEqual(arrangement['render_origin_sample'],self.origin)
+        self.assertEqual(arrangement['candidate_review']['source_part']['instrument'],'unknown')
+        self.assertEqual(arrangement['candidate_review']['role_assignment'],
+                         'User-selected lead; not instrument identification or analyzer truth')
+        note=arrangement['notes'][0]
+        source=self.bundle['interpretations']['published']['events'][0]
+        self.assertEqual((note['id'],note['start'],note['end'],note['pitch'],note['velocity']),
+                         ('common',source['start'],source['end'],source['pitch'],80))
+        self.assertEqual(self.library.job(self.parent_id)['result'],before)
 
     def test_selection_unknown_duplicate_empty_and_cross_policy_ids(self):
         for ids in ([],['common','common'],['missing'],['o2'],[True]):

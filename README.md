@@ -1,6 +1,6 @@
 # Wood & String
 
-I’m into guitars, and songs like Radiohead’s *Weird Fishes / Arpeggi* and Dahi’s *How To Pray* made me want to hear and study music as instrumentals—and explore how those parts might translate to guitar and bass.
+I’m into guitars, and songs like Radiohead’s *Weird Fishes / Arpeggi* and Dahi’s *How To Pray* made me want to hear and study music as instrumentals and explore how those parts might translate to guitar and bass.
 
 Wood & String is my unfinished experiment in a private, local music player that can help with that. I’m working through vocal separation, note transcription, playable arrangements and expressive rendering, with local processing and offline use as the aim.
 
@@ -9,6 +9,16 @@ Wood & String is my unfinished experiment in a private, local music player that 
 The prototype stores and plays local music, makes short experimental acoustic and Jazz Bass previews, and lets me inspect candidate notes or revise a saved passage. Electric guitar, optional drums, full-song arrangements and a small local AI arranger are still being developed. This source snapshot is not a ready-to-install release.
 
 There’s also a processing queue: save a short preview request on a device, send it when the laptop is reachable, and let it wait if the laptop is busy. Phone setup and real-device testing are still ahead.
+
+## How I’m putting it together
+
+![The short-preview flow: keep the original, estimate notes, assign parts, play instruments, then save and revise.](diagrams/how-a-preview-works.png)
+
+*The short-preview experiment, shown on 16 October 2026. The choppy earlier results are still a problem to solve.*
+
+![The composer plan separates hearing the source, planning playable parts, dry instrument sound, effects and listening comparisons.](diagrams/what-the-composer-adds.png)
+
+*The composer I’m working toward. This provisional map shows existing pieces and planned integration. Optional Electric tone has since reached backend tests, but stays disabled in the app and still needs a listening check.*
 
 ## What I’m learning
 

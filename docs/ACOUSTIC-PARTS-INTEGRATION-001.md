@@ -1,6 +1,6 @@
 # Saved acoustic parts in previews
 
-16 October 2026. New acoustic preview code now captures and saves each guitarist's part, serves verified parts for the completed job, and connects explicit Load, Play, mute and seek controls to the existing preview page. Silent integration checks pass. This source change still needs a fresh production worker trial and live browser/device playback; the running server has not been restarted.
+16 October 2026. New acoustic preview code now captures and saves each guitarist's part, serves verified parts for the completed job, and connects explicit Load, Play, mute and seek controls to the existing preview page. Silent integration checks pass. One genuine selected-candidate Solo worker now commits verified parts with an exactly unchanged master and proven managed cleanup. Its controller fails the final generated-dataclass source check, so complete closing validation remains open. Live browser/device playback is also unverified; the running server has not been restarted. ACOUSTIC-COMPANION-WORKER-001 records the actual result and preserved failure.
 
 ## Preview generation
 
@@ -47,4 +47,4 @@ The earlier six-cell real sampled-guitar comparison remains the evidence for unc
 
 ## Next validation
 
-Freeze a fresh current-source closure before a bounded production worker trial, with a reviewed peak disk allowance. Then verify loading, explicit playback, mute/seek/handoff and cleanup in one owned silent browser context before arranging a human listening check. SERVER-RESTART-POLICY-001 still governs the separately rejected server-start action. Automatic focus selection for Essentials, expression recovery, full songs, Electric/Bass/drums/Ensemble, local AI and the required real-device acceptance remain open.
+Repair and prospectively test the generated-dataclass checker before claiming a complete closing validation. Preserve the consumed failed trial and its independently verified worker result. Live loading, explicit playback, mute/seek/handoff and cleanup still need one owned silent browser context before a human listening check. SERVER-RESTART-POLICY-001 still governs the separately rejected server-start action. Automatic focus selection for Essentials, expression recovery, full songs, Electric/Bass/drums/Ensemble, local AI and the required real-device acceptance remain open.

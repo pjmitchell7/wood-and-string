@@ -1,4 +1,4 @@
-"""Actual sfizz/Meta OGG diagnostic render, source sample timing, no stems.
+"""Actual sfizz/Meta OGG diagnostic render with optional passive part capture.
 
 sfizz has no MIDI-channel filtering. Each performer/string gets an isolated
 instance and a derived exact-string map, instead of loading all channel maps.
@@ -92,13 +92,15 @@ def _write_pcm16(spool, partial, sr, raw_peak, level_policy, cancel, progress):
             'clipped_samples': 0, 'quantization': 'PCM16 nearest, no dither', 'frames': frames}
 
 
-def render(arrangement, output, cancel=lambda:False, progress=lambda p:None, level_policy="peak"):
+def render(arrangement, output, cancel=lambda:False, progress=lambda p:None, level_policy="peak", *, stem_capture=None):
     """Render sampled notes to a generated listening rendition, not a source master.
 
     Default peak policy applies constant gain to a float32 intermediate to reach
     -3 dBFS sample peak before PCM16 conversion. No LUFS or true-peak guarantee.
     legacy_fixed preserves the former 0.25 gain for diagnostic comparison.
     Both passes stream bounded blocks; temporary files are removed on failure.
+    Optional performer capture observes the same native calls and master values.
+    The caller owns its admission, finish, publication and cleanup lifecycle.
     """
     if level_policy not in ('peak', 'legacy_fixed'):
         raise ValueError('Unknown render level policy')
@@ -109,13 +111,19 @@ def render(arrangement, output, cancel=lambda:False, progress=lambda p:None, lev
         raise ValueError('Render origin must precede all notes in source sample coordinates')
     total=max(n['end'] for n in notes)-origin+sr
     if total>sr*120: raise ValueError('Diagnostic render is limited to 120 seconds')
+    if stem_capture is not None:
+        from .acoustic_stem_capture import AcousticStemCapture
+        if not isinstance(stem_capture, AcousticStemCapture):
+            raise TypeError('Expected an admitted acoustic performer capture object')
+        stem_capture.bind_render(arrangement, origin_sample=origin, total_frames=total)
     output.parent.mkdir(parents=True,exist_ok=True)
     partial=output.with_suffix(output.suffix+'.partial')
     spool=output.with_suffix(output.suffix+'.float.partial')
     if output.exists() or partial.exists() or spool.exists(): raise FileExistsError('Refusing to overwrite render')
     api=Sfizz().lib; instances=[]; block=256; qualities=[]
     try:
-        for player,string in sorted({(n['player'],n['string']) for n in notes}):
+        pairs=sorted({(n['player'],n['string']) for n in notes})
+        for player,string in pairs:
             synth=api.sfizz_create_synth()
             if not synth: raise RuntimeError('sfizz allocation failed')
             instances.append([synth,[],0])
@@ -135,7 +143,8 @@ def render(arrangement, output, cancel=lambda:False, progress=lambda p:None, lev
             for start in range(0,total,block):
                 if cancel(): raise InterruptedError('Render cancelled')
                 size=min(block,total-start); mix=[0.]*(size*2)
-                for state in instances:
+                if stem_capture is not None: stem_capture.begin_block(start,size)
+                for instance_index,state in enumerate(instances):
                     synth,events,index=state
                     while index<len(events) and events[index][0]<start+size:
                         sample,on,pitch,velocity=events[index]
@@ -143,12 +152,15 @@ def render(arrangement, output, cancel=lambda:False, progress=lambda p:None, lev
                         index+=1
                     state[2]=index
                     api.sfizz_render_block(synth,channels,2,size)
+                    if stem_capture is not None:
+                        stem_capture.add_instance(*pairs[instance_index],buffers[0],buffers[1])
                     for j in range(size):
                         mix[2*j]+=buffers[0][j]; mix[2*j+1]+=buffers[1][j]
                 values=array.array('f',mix)
                 if any(not math.isfinite(x) for x in values):
                     raise RuntimeError('Non-finite sampled render')
                 peak=max(peak,max(abs(x) for x in values))
+                if stem_capture is not None: stem_capture.end_block(values)
                 if sys.byteorder != 'little': values.byteswap()
                 floats.write(values.tobytes())
                 if start%(block*100)==0: progress(.8*start/total)

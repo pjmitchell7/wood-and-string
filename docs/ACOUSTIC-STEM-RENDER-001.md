@@ -1,0 +1,15 @@
+# Optional acoustic renderer observation
+
+16 October 2026. The existing acoustic renderer now accepts a keyword-only `stem_capture` object. No worker request, Library publication, browser controls or feature activation uses it yet.
+
+The renderer checks the helper type and binds its canonical complete arrangement hash, source origin and frame count before any native load. A mismatch refuses the companion while the ordinary render continues. With no capture argument, no helper import, arrangement serialization or additional cancellation callback occurs.
+
+Each block begins one observation. The existing sorted performer/string order and three-field native state remain intact. Immediately after each native call, the helper copies that instance's buffers before reuse. The original master additions, float32 conversion, peak calculation, quantizer, event scheduling, output replacement, metrics and native teardown remain in their original order. The master float array is observed before byte swapping. Capture returns never gate or replace the master path.
+
+The helper's new `bind_render` detects an arrangement changed after its snapshot. The caller still owns resource admission, finalization against the completed normal WAV, verified immutable publication and helper cleanup on every exit. This hook alone does not save a bundle to the Library, expose mutable parts, enable Electric or change existing preview sound defaults. `RENDER_VERSION` remains unchanged because default samples, commands and output processing are unchanged; companion manifests separately bind the actual module hashes and renderer receipt.
+
+Root preserves the exact pre-hook renderer as a9,336-byte private source snapshot, SHA256 `3d74a373289f7dcdbe2425de2f24186b5fd5027434358dfadce450cc2ebda778`. An authored FakeApi through that source produces a176,488-byte WAV, SHA256 `0d4994ae324b5e55f6e65d79886a235b2c838817e29bb95d78566a74a071fe6d`. This is a silent software fixture, not a guitar-sound reference.
+
+Root's17 helper/bridge tests pass in7.028seconds, zero skips/failures, with ResourceWarning errors. The new bridge checks legacy PCM identity and command times, exact current metrics with/without capture, a nonzero shared tail, arrangement-mismatch refusal, a capture write failure during the current master block and main-render cancellation with caller-owned cleanup. Independent review repeats all17 tests in7.294seconds and separately compiles the preserved legacy source: Solo/Duo under both peak and legacy-fixed policies match current default WAV bytes, complete metrics, command trace and native-free order in all four authored cases.
+
+No sample bank, native DLL, browser, audio device or model ran in these checks. Actual native capture, job/storage/HTTP/player integration, bounded full-song processing and listening/device acceptance remain open. Earlier frozen native runs retain their original source identities and closed audits; future native protocols need a fresh reviewed current-source closure.

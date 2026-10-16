@@ -14,6 +14,8 @@ There’s also a processing queue: save a short preview request on a device, sen
 
 The first previews were choppy. Getting pitches into a guitar sound wasn’t enough: ringing notes, repeated attacks, rests, phrasing and the identity of the important part all matter. Following the vocal melody can miss the guitar pattern that made me interested in the song in the first place.
 
+One useful lesson was that an engine fix left the rejected previews completely unchanged. I’m now recording what each comparison actually tells me about timing, ringing, dynamics or tone, and what still needs a listening check. Those details matter more than a single quality score.
+
 That has shaped the engineering: keep originals intact, preserve source timing, show uncertain notes and omissions, and keep vocal removal separate from recreating a performance. A successful render or a passing test doesn’t mean the arrangement sounds right.
 
 Next is making those musical decisions better, then returning to real-song listening comparisons. The two songs above are inspirations and planned tests, not examples I’ve already recreated successfully.

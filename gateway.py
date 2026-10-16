@@ -16,8 +16,8 @@ from pairing import Pairing
 
 ROOT=Path(__file__).parent
 COOKIE='__Host-guitar_device'
-FORWARD_GET=re.compile(r'^/api/(?:status|library|previews/latest|media/[a-zA-Z0-9-]+|jobs/[a-zA-Z0-9-]+)$')
-FORWARD_POST=re.compile(r'^/api/(?:import|diagnostic|extract|arrange-preview|refine-preview|instrumental-candidates|arrange-instrumental|jobs/[a-zA-Z0-9-]+/cancel)$')
+FORWARD_GET=re.compile(r'^/api/(?:status|library|previews/latest|media/[a-zA-Z0-9-]+|jobs/[a-zA-Z0-9-]+|processing-queue(?:/[a-zA-Z0-9-]+)?)$')
+FORWARD_POST=re.compile(r'^/api/(?:import|diagnostic|extract|arrange-preview|refine-preview|instrumental-candidates|arrange-instrumental|jobs/[a-zA-Z0-9-]+/cancel|processing-queue(?:/[a-zA-Z0-9-]+/cancel)?)$')
 PUBLIC_FILES={'/pair.js':'pair.js','/pair.css':'pair.css','/icon.svg':'icon.svg'}
 
 async def bounded_body(request,limit):
@@ -114,7 +114,9 @@ def create_gateway(root,transport=None):
                 content=chunks()
             elif request.method=='POST':content=await bounded_body(request,1024**2 if path=='arrange-instrumental' else 65536 if path=='refine-preview' else 4096)
             else:content=None
-            outgoing=client.build_request(request.method,full,headers=headers,content=content)
+            query=request.query_params if path=='processing-queue' and request.method in ('GET','HEAD') else None
+            if query is not None and len(request.url.query)>128:raise HTTPException(400,'History query too large.')
+            outgoing=client.build_request(request.method,full,headers=headers,content=content,params=query)
             upstream=await client.send(outgoing,stream=True)
         except httpx.HTTPError:raise HTTPException(503,'The library laptop service is unavailable. Downloaded music still works.')
         kept={key:value for key,value in upstream.headers.items() if key.lower() in ('content-type','content-length','content-range','accept-ranges','etag','x-content-sha256')}
@@ -122,7 +124,7 @@ def create_gateway(root,transport=None):
 
     @app.get('/{path:path}')
     def static(path:str,request:Request):
-        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs'}
+        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs','processing-outbox.mjs'}
         full='/'+path
         if full in PUBLIC_FILES:return FileResponse(ROOT/'web'/PUBLIC_FILES[full])
         if not request.state.device or path not in permitted:raise HTTPException(404,'Page not found')

@@ -4,6 +4,7 @@ import { mountCapture } from './capture-ui.mjs';
 import { preflightRestore } from './backup.mjs';
 import { mixedPreviewRequest, previewSelection, previewChoice, previewGuidance, mixedCandidateSummary, originalPassage, passagePlayer, canPreviewMixed } from './mixed-preview.mjs?v=22';
 import { instrumentalRequest, instrumentalPassage, instrumentalChanges, mountInstrumentalCandidates } from './instrumental.mjs?v=22';
+import { ProcessingOutbox, IndexedProcessingStore } from './processing-outbox.mjs?v=23';
 
 const $ = id => document.getElementById(id);
 
@@ -37,15 +38,17 @@ async function verifiedComparisonMedia(track){
 let bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'};
 let instrumentalSource,instrumentalAvailability={ready:false,reason:'Connect to the laptop to check instrumental inspection availability.'};
 let extractionSource, mixedSource, activeJobKind, activeJob, pollTimer, pendingActions=0, restoreBusy=false;
+let enqueueingProcessing=false;
+function processingMime(track){const known=['audio/wav','audio/mpeg','audio/mp4','audio/aac','audio/flac','audio/webm'];if(known.includes(track.type))return track.type;return {wav:'audio/wav',mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',flac:'audio/flac',webm:'audio/webm'}[track.name?.split('.').pop().toLowerCase()]||null}
 
 async function action(fn){if(restoreBusy)throw Error('Wait for the restore to finish.');pendingActions++;try{return await fn()}finally{pendingActions--}}
 
 function jobMessage(text){$('diagnosticStatus').textContent=text}
 function describeAdaptation(note){if(typeof note==='string')return note;if(note.kind==='octave')return `${note.note_id}: moved ${Math.abs(note.semitones)/12} octave${Math.abs(note.semitones)===12?'':'s'} ${note.semitones>0?'up':'down'}`;if(note.kind==='omission')return `${note.note_id}: ${note.reason||'No available sampled string met the hand-position limits'}${note.essential?' (melody note)':''}`;if(note.kind==='contour-not-rendered')return `${note.note_id}: pitch bends or vibrato are retained in the analysis but not reproduced in this preview`;return `${note.note_id||'Note'}: ${note.reason||note.kind||'adapted'}`}
 
-async function session(){const response=await fetch('/session',{cache:'no-store'});if(response.status===401||response.status===403){$('connectionHelp').hidden=false;throw Error('This device needs laptop approval again. Downloaded music still plays; use Reconnect to the laptop.')}if(!response.ok)throw Error('The laptop connection could not be established. Downloaded music still plays.')}
+async function session(signal){const response=await fetch('/session',{cache:'no-store',signal});if(response.status===401||response.status===403){$('connectionHelp').hidden=false;const error=Error('This device needs laptop approval again. Downloaded music still plays; use Reconnect to the laptop.');error.status=response.status;throw error}if(!response.ok)throw Error('The laptop connection could not be established. Downloaded music still plays.')}
 
-async function apiJSON(url,options){await session();const response=await fetch(url,options);let data;try{data=await response.json()}catch{throw Error('The laptop did not return a usable response.')}if(!response.ok)throw Error(data.detail||`Request failed (${response.status}).`);return data}
+async function apiJSON(url,options){await session(options?.signal);const response=await fetch(url,options);let data;try{data=await response.json()}catch{throw Error('The laptop did not return a usable response.')}if(!response.ok){const error=Error(data.detail||`Request failed (${response.status}).`);error.status=response.status;throw error}return data}
 
 let resultGeneration=0;
 let refinementStarting=false;
@@ -194,6 +197,24 @@ $('mixedForm').onsubmit=async event=>{
     await showJob(await apiJSON('/api/arrange-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)}),token);
   }catch(e){$('mixedError').textContent=e.message;$('mixedSubmit').disabled=false}
 };
+$('mixedQueue').onclick=()=>{
+  if(enqueueingProcessing)return;
+  enqueueingProcessing=true;$('mixedQueue').disabled=true;
+  const selectedSource=mixedSource?{...mixedSource}:null;
+  const chosen={start:Number($('mixedStart').value),end:Number($('mixedEnd').value),performers:Number($('mixedPerformers').value),source_notes:$('mixedSourceNotes').value,arrangement_notes:$('mixedArrangementNotes').value,accompaniment:$('mixedAccompaniment').value,instrument:$('mixedInstrument').value,bass_part:$('mixedBassPart').value};
+  return action(()=>withProcessingLock(async()=>{
+  const source=selectedSource;
+  if(!source?.cached)throw Error('Download or import this original on this device before queuing it.');
+  // The local source is verified below; this URL permits the existing form's
+  // choice validation without pretending it has been received by the laptop.
+  const request=mixedPreviewRequest({...source,url:source.url||mediaPath(source.sha256)},chosen.start,chosen.end,chosen.performers,{source_notes:chosen.source_notes,arrangement_notes:chosen.arrangement_notes,accompaniment:chosen.accompaniment},{instrument:chosen.instrument,bass_part:chosen.performers===2?'melody-and-bass':chosen.bass_part});
+  await processingBytes({sha256:source.sha256,size:source.size});
+  delete request.asset_id;
+  const type=processingMime(source);if(!type)throw Error('Choose MP3, WAV, M4A/AAC, FLAC or WebM audio for this preview.');
+  await processingOutbox.enqueue({track_id:source.id,sha256:source.sha256,size:source.size,name:source.name,type},request);
+  $('mixedError').textContent='Saved on this device. It will transfer when the laptop is reachable and this page is open.';
+  })).then(()=>{syncProcessing()}).catch(error=>{$('mixedError').textContent=error.message}).finally(()=>{enqueueingProcessing=false;$('mixedQueue').disabled=false});
+};
 function selectExtraction(track){extractionSource=track;$('extractionPanel').hidden=false;$('extractSource').textContent=track.name;$('isolatedMelody').checked=false;$('extractError').textContent='';$('extractionPanel').scrollIntoView({behavior:'smooth',block:'center'});$('extractStart').focus()}
 $('extractClose').onclick=()=>{$('extractionPanel').hidden=true};
 $('extractForm').onsubmit=async event=>{
@@ -217,8 +238,10 @@ function transaction(mode, action) { return new Promise((resolve,reject)=>{const
 const all = ()=>transaction('readonly',s=>s.getAll());
 
 const put = t=>transaction('readwrite',s=>s.put(t));
-function saveQueue(value){return new Promise((resolve,reject)=>{const tx=db.transaction('settings','readwrite');tx.objectStore('settings').put([...value],'queue');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
-function loadQueue(){return new Promise((resolve,reject)=>{const tx=db.transaction('settings','readonly'),req=tx.objectStore('settings').get('queue');tx.oncomplete=()=>resolve(req.result);tx.onerror=()=>reject(tx.error)})}
+let assetAliases={};
+function resolveTrackId(id){const seen=new Set();while(typeof assetAliases[id]==='string'&&!seen.has(id)){seen.add(id);id=assetAliases[id]}return id}
+function saveQueue(value){return new Promise((resolve,reject)=>{const tx=db.transaction('settings','readwrite');tx.objectStore('settings').put(value.map(resolveTrackId),'queue');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function loadQueue(){return new Promise((resolve,reject)=>{const tx=db.transaction('settings','readonly'),store=tx.objectStore('settings'),req=store.get('queue'),aliases=store.get('assetAliases');tx.oncomplete=()=>{assetAliases=aliases.result||{};resolve(req.result?.map(resolveTrackId))};tx.onerror=()=>reject(tx.error)})}
 
 const hash = async data => [...new Uint8Array(await crypto.subtle.digest('SHA-256',data))].map(n=>n.toString(16).padStart(2,'0')).join('');
 
@@ -226,7 +249,7 @@ const mediaPath = id => `/offline-media/${id}`;
 
 function button(label,fn){const b=document.createElement('button');b.textContent=label;b.onclick=()=>action(fn).catch(e=>status(e.message));return b}
 
-function draw(){const root=$('tracks');root.replaceChildren();const query=$('search').value.toLowerCase();for(const t of tracks.filter(t=>t.name.toLowerCase().includes(query))){const row=document.createElement('div');row.className='track';const info=document.createElement('div'),title=document.createElement('strong'),meta=document.createElement('span');title.textContent=t.name;meta.className='muted';meta.textContent=`${t.variant||'Original'} · ${(t.size/1048576).toFixed(1)} MB · ${t.cached?'Verified on this device':'Laptop connection needed'}`;info.append(title,meta);const actions=document.createElement('div');actions.className='actions';actions.append(button('Play',()=>{queue.push(t.id);drawQueue();return play(queue.length-1)}),button('+ Queue',()=>{queue.push(t.id);drawQueue()}),button(t.favorite?'♥ Favorite':'♡ Favorite',async()=>{t.favorite=!t.favorite;await put(t);draw()}));if(t.cached&&!t.url&&['Original','original'].includes(t.variant))actions.append(button('Save to laptop',()=>upload(t)));if(canPreviewMixed(t))actions.append(button('Preview instrumental',()=>selectMixed(t)),button('Inspect instrumental notes',()=>selectInstrumental(t)));if(t.url&&['Original','original'].includes(t.variant)&&(t.type==='audio/wav'||/\.wav$/i.test(t.name)))actions.append(button('Isolated melody only',()=>selectExtraction(t)));if(!t.cached)actions.append(button('Download',()=>download(t)));else if(t.url)actions.append(button('Remove download',()=>removeDownload(t)));else{const keep=button('Keep local copy',()=>{});keep.disabled=true;keep.title='Save to the laptop or refresh its library before removing this local copy.';actions.append(keep)}row.append(info,actions);root.append(row)}drawQueue()}
+function draw(){const root=$('tracks');root.replaceChildren();const query=$('search').value.toLowerCase();for(const t of tracks.filter(t=>t.name.toLowerCase().includes(query))){const row=document.createElement('div');row.className='track';const info=document.createElement('div'),title=document.createElement('strong'),meta=document.createElement('span');title.textContent=t.name;meta.className='muted';meta.textContent=`${t.variant||'Original'} · ${(t.size/1048576).toFixed(1)} MB · ${t.cached?'Verified on this device':'Laptop connection needed'}`;info.append(title,meta);const actions=document.createElement('div');actions.className='actions';actions.append(button('Play',()=>{queue.push(t.id);drawQueue();return play(queue.length-1)}),button('+ Queue',()=>{queue.push(t.id);drawQueue()}),button(t.favorite?'♥ Favorite':'♡ Favorite',async()=>{t.favorite=!t.favorite;await put(t);draw()}));if(t.cached&&!t.url&&['Original','original'].includes(t.variant)){actions.append(button('Save to laptop',()=>upload(t)));if(processingMime(t))actions.append(button('Queue laptop preview',()=>selectMixed(t)))}if(canPreviewMixed(t))actions.append(button('Preview instrumental',()=>selectMixed(t)),button('Inspect instrumental notes',()=>selectInstrumental(t)));if(t.url&&['Original','original'].includes(t.variant)&&(t.type==='audio/wav'||/\.wav$/i.test(t.name)))actions.append(button('Isolated melody only',()=>selectExtraction(t)));if(!t.cached)actions.append(button('Download',()=>download(t)));else if(t.url)actions.append(button('Remove download',()=>withProcessingLock(()=>removeDownload(t))));else{const keep=button('Keep local copy',()=>{});keep.disabled=true;keep.title='Save to the laptop or refresh its library before removing this local copy.';actions.append(keep)}row.append(info,actions);root.append(row)}drawQueue()}
 
 function drawQueue(){const signature=JSON.stringify(queue);if(signature!==queueSignature){queueSignature=signature;if(current<0)transport?.stop();else transport?.queueChanged(entryAt(current))}saveQueue(queue).catch(e=>status(`Queue could not be saved: ${e.message}`));const root=$('queue');root.replaceChildren();queue.forEach((id,i)=>{const t=tracks.find(t=>t.id===id);const li=document.createElement('li');li.textContent=`${i===current?'▶ ':''}${t?.name||'Unavailable'}`;li.append(button('↑',()=>{transport?.sync();if(i>0){[queue[i-1],queue[i]]=[queue[i],queue[i-1]];if(current===i)current--;else if(current===i-1)current++;drawQueue()}}),button('×',()=>{transport?.sync();queue.splice(i,1);if(i<current)current--;else if(i===current){pausePlayback();current=-1}drawQueue()}));root.append(li)})}
 
@@ -241,7 +264,75 @@ async function download(t){await session();status(`Downloading ${t.name}…`);co
 
 async function upload(t){await session();const cached=await(await caches.open(MEDIA)).match(mediaPath(t.sha256));if(!cached)throw Error('Local audio is missing. Import it again.');status(`Saving ${t.name} to the laptop…`);const bytes=await cached.arrayBuffer();if(await hash(bytes)!==t.sha256)throw Error('Local audio verification failed.');const response=await fetch('/api/import',{method:'POST',headers:{'Content-Type':t.type||'application/octet-stream','X-Filename':encodeURIComponent(t.name)},body:bytes});if(!response.ok)throw Error(`Laptop save failed (${response.status}). Your verified local copy remains available.`);const item=await response.json();if(item.sha256!==t.sha256)throw Error('Laptop returned a different audio identity.');const old=t.id;t.id=item.id;t.source_id=item.source_id;t.url=`/api/media/${encodeURIComponent(item.id)}`;await put(t);if(old!==t.id){await transaction('readwrite',s=>s.delete(old));queue=queue.map(id=>id===old?t.id:id);tracks=tracks.filter(x=>x===t||x.id!==t.id)}draw();status(`Saved ${t.name} to the laptop library. Your original is preserved.`)}
 
-async function removeDownload(t){if(!t.url)throw Error('Save to the laptop or reconnect its library before removing this copy.');if(!tracks.some(x=>x.id!==t.id&&x.cached&&x.sha256===t.sha256))await(await caches.open(MEDIA)).delete(mediaPath(t.sha256));t.cached=false;if(!t.url){await transaction('readwrite',s=>s.delete(t.id));tracks=tracks.filter(x=>x.id!==t.id)}else await put(t);draw();await storage();status('Removed from this device. The laptop library was not deleted.')}
+async function removeDownload(t){if(!t.url)throw Error('Save to the laptop or reconnect its library before removing this copy.');if(!globalThis.navigator?.locks?.request)throw Error('Keep this download for now; safe removal is unavailable in this browser.');if((await processingOutbox.list()).some(row=>row.source.sha256===t.sha256&&!row.receipt&&!['complete','cancelled','failed'].includes(row.status)))throw Error('This original is needed by a pending processing request. Keep it here until laptop receipt is confirmed, or cancel the request.');if(!tracks.some(x=>x.id!==t.id&&x.cached&&x.sha256===t.sha256))await(await caches.open(MEDIA)).delete(mediaPath(t.sha256));t.cached=false;if(!t.url){await transaction('readwrite',s=>s.delete(t.id));tracks=tracks.filter(x=>x.id!==t.id)}else await put(t);draw();await storage();status('Removed from this device. The laptop library was not deleted.')}
+
+async function withProcessingLock(fn){return navigator.locks?.request?navigator.locks.request('wood-processing-sync',fn):fn()}
+async function processingBytes(source){
+  const saved=await(await caches.open(MEDIA)).match(mediaPath(source.sha256));
+  if(!saved)throw Error('The queued original is missing from this device. Restore the original before retrying.');
+  const bytes=await saved.arrayBuffer();
+  if(bytes.byteLength!==source.size||await hash(bytes)!==source.sha256)throw Error('The queued original failed verification. Keep it for review.');
+  return bytes;
+}
+const processingOutbox=new ProcessingOutbox({store:new IndexedProcessingStore(),getBytes:processingBytes,
+  upload:processingUpload,
+  submit:value=>processingAPI('/api/processing-queue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)}),
+  poll:id=>processingAPI(`/api/processing-queue/${encodeURIComponent(id)}`),
+  cancel:id=>processingAPI(`/api/processing-queue/${encodeURIComponent(id)}/cancel`,{method:'POST'}),
+  onChange:()=>drawProcessing()});
+async function processingUpload({source,bytes}){
+  const item=await processingAPI('/api/import',{method:'POST',headers:{'Content-Type':source.type,'X-Filename':encodeURIComponent(source.name)},body:bytes},180000);
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  if(!item||!uuid.test(item.id)||!uuid.test(item.source_id)||item.sha256!==source.sha256||item.size!==source.size||item.kind!=='original'){
+    const error=Error('The laptop returned a different original identity. Your local copy is preserved.');error.status=409;throw error;
+  }
+  const local=tracks.find(t=>t.id===source.track_id)||tracks.find(t=>t.sha256===source.sha256&&['Original','original'].includes(t.variant));
+  if(local){
+    const old=local.id,adopted={...local,id:item.id,source_id:item.source_id,type:source.type,url:`/api/media/${encodeURIComponent(item.id)}`};
+    const nextQueue=queue.map(id=>id===old?item.id:id);
+    // Catalog replacement and listening-queue references commit together;
+    // cached bytes and the outbox's immutable source identity remain untouched.
+    let committedAliases;
+    await new Promise((resolve,reject)=>{const tx=db.transaction(['tracks','settings'],'readwrite');const catalog=tx.objectStore('tracks'),settings=tx.objectStore('settings');catalog.put(adopted);if(old!==item.id)catalog.delete(old);settings.put(nextQueue,'queue');const aliases=settings.get('assetAliases');aliases.onsuccess=()=>{committedAliases={...(aliases.result||{}),...(old===item.id?{}:{[old]:item.id})};settings.put(committedAliases,'assetAliases')};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Local catalog adoption stopped.'))});
+    assetAliases=committedAliases;
+    Object.assign(local,adopted);tracks=tracks.filter(t=>t===local||t.id!==item.id);
+    // Map the current in-memory order after commit, preserving edits made while
+    // IndexedDB was busy. Durable aliases also repair an older queued write on
+    // the next launch if the page closes between these two commits.
+    queue=queue.map(resolveTrackId);draw();
+  }
+  return item;
+}
+async function processingAPI(url,options={},milliseconds=20000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),milliseconds);try{return await apiJSON(url,{...options,signal:controller.signal})}finally{clearTimeout(timer)}}
+let processingSync=null;
+async function syncProcessing(){
+  if(restoreBusy||document.visibilityState==='hidden')return;
+  if(processingSync)return processingSync;
+  // Store transitions are atomic across tabs. Avoid holding a browser lock
+  // across networking: cancellation intent must remain immediately writable.
+  processingSync=action(()=>processingOutbox.flush()).then(()=>drawProcessing()).catch(error=>{$('processingStatus').textContent=error.message}).finally(()=>{processingSync=null});
+  return processingSync;
+}
+async function drawProcessing(){
+  const root=$('processingQueue');if(!root)return;
+  const rows=await processingOutbox.list();root.replaceChildren();
+  $('processingStatus').textContent=rows.length?'Processing stays on your laptop. Keep this page open to send pending work or check results.':'No processing requests saved on this device.';
+  for(const row of rows){
+    const li=document.createElement('li'),label=document.createElement('span');
+    const states={local:'Saved on this device',waiting:'Waiting for the laptop; receipt not yet confirmed',accepted:{queued:'Received by laptop · queued',waiting:'Received by laptop · waiting for resources',running:'Processing on laptop'}[row.remote_state]||'Received by laptop','cancel-requested':'Cancellation pending on laptop',complete:'Ready on laptop',cancelled:'Cancelled',failed:'Processing failed',attention:'Needs attention'};
+    const request=row.request,choice=`${request.instrument==='jazz-bass'?'Jazz Bass':'Acoustic'} · ${request.performers} player${request.performers===1?'':'s'}${request.bass_part?' · '+request.bass_part.replaceAll('-',' '):''}`;
+    label.textContent=`${row.source.name} · ${request.start_seconds}–${request.end_seconds} seconds · ${choice} · ${states[row.status]||row.status}${row.reason?' · '+row.reason:''}`;li.append(label);
+    if(request.guidance?.arrangement_notes){const note=document.createElement('p');note.className='muted';note.textContent=request.guidance.arrangement_notes;li.append(note)}
+    if(row.status==='complete')li.append(button('Open preview',()=>{if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');return viewSavedJob(row.receipt.job_id)}));
+    if(!['complete','cancelled','failed'].includes(row.status))li.append(button('Cancel',async()=>{await withProcessingLock(()=>processingOutbox.requestCancel(row.operation_id));await syncProcessing()}));
+    if(row.status==='attention')li.append(button('Retry connection',async()=>{await withProcessingLock(()=>processingOutbox.retry(row.operation_id));await syncProcessing()}));
+    root.append(li);
+  }
+}
+$('processingSync').onclick=()=>syncProcessing();
+window.addEventListener('online',()=>syncProcessing());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncProcessing()});
+setInterval(()=>syncProcessing(),20000);
 
 function entryAt(index){const track=tracks.find(t=>t.id===queue[index]);return track?{index,id:track.id,track}:null}
 function following(entry){
@@ -422,6 +513,8 @@ $('restore').onchange=async event=>{
 if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{comparison.stop();return $('engine').value==='scheduled'?transport?.resume():audio.play()},pause:pausePlayback,previoustrack:()=>play(current-1),nexttrack:next,seekto:d=>{if(Number.isFinite(d.seekTime)){comparison.stop();if($('engine').value==='scheduled')transport?.seek(d.seekTime);else audio.currentTime=d.seekTime}}})){try{navigator.mediaSession.setActionHandler(action,handler)}catch{}}}
 
 tracks=await all();try{queue=((await loadQueue())||JSON.parse(localStorage.getItem('queue')||'[]')).filter(id=>tracks.some(t=>t.id===id))}catch{queue=[]}const cache=await caches.open(MEDIA);for(const t of tracks){if(t.cached&&!await cache.match(mediaPath(t.sha256))){t.cached=false;await put(t)}}draw();await storage();status('Ready. Import music to listen locally.');
+await drawProcessing().catch(error=>{$('processingStatus').textContent=error.message});
+syncProcessing();
 
 if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>status('Offline shell unavailable. Use localhost or a trusted HTTPS connection.'))}
 

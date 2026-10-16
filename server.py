@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 import secrets
+import sqlite3
 import subprocess
 import sys
 import time
@@ -19,6 +20,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from library import Library, MAX_IMPORT
 from pairing import Pairing
+from processing_queue import ProcessingQueue, QueueConflict, QueueFull
+from processing_resources import Admission
 from audio.preferences import normalize_guidance, guidance_is_default
 from audio.render import RENDER_VERSION
 from audio.preview_instruments import selection_fields, preview_guidance, BASS_RENDER_VERSION
@@ -56,6 +59,8 @@ def create_app(root=None):
     processes = {}
     import_lock = asyncio.Lock()
     preview_lock = asyncio.Lock()
+    processing = ProcessingQueue(library)
+    admission = Admission()
 
     def serialized_preview(handler):
         @wraps(handler)
@@ -93,8 +98,13 @@ def create_app(root=None):
                 from analysis_evidence import reconcile_work, reconcile_evidence
                 reconcile_work(library)
                 reconcile_evidence(library)
+                processing.recover()
+            scheduler = asyncio.create_task(processing_loop())
             try: yield
             finally:
+                scheduler.cancel()
+                try: await scheduler
+                except asyncio.CancelledError: pass
                 for p in processes.values():
                     if p.stdin: p.stdin.close()
                     if p.poll() is None:
@@ -102,6 +112,7 @@ def create_app(root=None):
                         except subprocess.TimeoutExpired: p.terminate();p.wait(timeout=5)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.library = library
+    app.state.processing = processing
 
     def checked_job(identity):
         result=library.job(identity)
@@ -355,12 +366,8 @@ def create_app(root=None):
             (library.stage/(identity+'.cancel')).touch()
         return {'requested':True}
 
-    @app.post('/api/arrange-preview')
-    @serialized_preview
-    async def arrange_preview(request: Request):
-        raw=await small_body(request,4096)
+    def mixed_spec(value, *, frozen=None):
         try:
-            value=json.loads(raw)
             asset=library.get(value['asset_id'])
             if asset['kind']!='original': raise ValueError('Choose an imported original recording.')
             if asset['mime'] not in INPUT_MIMES:
@@ -376,17 +383,189 @@ def create_app(root=None):
             guidance=preview_guidance(value.get('guidance'),performers,selection)
         except (ValueError,KeyError,TypeError,AttributeError):
             raise HTTPException(400,'Choose an imported original, a valid passage up to 30 seconds, and one or two guitarists.')
-        runtime=mixed_runtime_status()
+        runtime=mixed_runtime_status() if frozen is None else {'ready':True,'manifest':{'runtime_version':frozen['runtime_version']}}
         if not runtime.get('ready'): raise HTTPException(503,runtime.get('reason') or 'The local mixed-preview runtime is not ready.')
         version=runtime.get('manifest',{}).get('runtime_version')
         if not isinstance(version,str) or not version: raise HTTPException(503,'The local mixed-preview runtime needs verification.')
-        if selection and not bass_runtime_status().get('ready'):
+        if frozen is None and selection and not bass_runtime_status().get('ready'):
             raise HTTPException(503,'The experimental Jazz Bass bank is not ready on this laptop.')
         spec={'kind':'mixed','asset_id':asset['id'],'sha256':asset['sha256'],
               'performers':performers,'start_seconds':start,'end_seconds':end,
               'pipeline_version':MIXED_PIPELINE_VERSION,'runtime_version':version,
               'renderer_version':BASS_RENDER_VERSION if selection else RENDER_VERSION,**selection}
         if not guidance_is_default(guidance): spec['guidance']=guidance
+        if frozen is not None:
+            for field in ('pipeline_version','renderer_version'): spec[field]=frozen[field]
+        return spec
+
+    def processing_receipt(row):
+        spec=row['request']
+        job_id=str(uuid.uuid5(uuid.NAMESPACE_URL,json.dumps(spec,sort_keys=True)))
+        return {'operation_id':row['operation_id'],'job_id':job_id,
+                'state':{'waiting_resources':'waiting','cancel_requested':'cancelling'}.get(row['state'],row['state']),
+                'reason':row.get('reason'), 'request':spec}
+
+    async def processing_tick():
+        # The same admission lock/process registry serves immediate previews and
+        # queued work. Never hold worker.lock while spawning its future owner.
+        async with preview_lock:
+            rows=processing.list(states=('queued','waiting_resources','running','cancel_requested'))
+            if not rows: return
+            for identity,child in list(processes.items()):
+                if child.poll() is not None and library.job(identity)['state'] in ('queued','running'):
+                    library.update_job(identity,'failed',error='The preview worker stopped unexpectedly.')
+            try: await reap_terminal_workers()
+            except HTTPException: return
+            for row in rows:
+                if row['state'] not in ('running','cancel_requested'): continue
+                identity=processing_receipt(row)['job_id']
+                try:
+                    current=checked_job(identity)
+                    child=processes.get(identity)
+                    if child is None and current['state'] in ('queued','running'):
+                        # A write/launch fault can leave a durable claim without
+                        # a registered process. Do not strand the whole lane or
+                        # infer that an unobserved worker is safe to replace.
+                        try:
+                            with library.exclusive('worker.lock'):
+                                library.update_job(identity,'failed',error='The processing attempt could not start safely. Your original and settings are preserved.')
+                        except OSError: continue
+                        current=library.job(identity)
+                    if child and child.poll() is not None and current['state'] in ('queued','running'):
+                        library.update_job(identity,'failed',error='The preview worker stopped unexpectedly.')
+                        current=library.job(identity)
+                    if row['state']=='cancel_requested' and (not child or child.poll() is not None):
+                        processing.finish(row['operation_id'],'cancelled',claim_token=row['claim_token'])
+                    elif current['state'] in ('complete','failed','cancelled','interrupted'):
+                        state='failed' if current['state']=='interrupted' else current['state']
+                        if row['state']=='cancel_requested': state='cancelled'
+                        processing.finish(row['operation_id'],state,reason=current.get('error'),claim_token=row['claim_token'])
+                except KeyError:
+                    processing.finish(row['operation_id'],'failed',reason='The saved processing attempt is missing. Your original is preserved.',claim_token=row['claim_token'])
+            row=processing.peek()
+            if row is None: return
+            if processes:
+                admission.reset()
+                processing.wait(row['operation_id'],'Waiting for the current laptop preview to finish.')
+                return
+            identity=processing_receipt(row)['job_id']
+            try:
+                prior=checked_job(identity)
+                if prior['state']=='complete':
+                    claimed=processing.claim_next(expected_id=row['operation_id'])
+                    if claimed: processing.finish(claimed['operation_id'],'complete',claim_token=claimed['claim_token'])
+                    return
+            except KeyError: pass
+            ready,reason=admission.check()
+            if not ready:
+                processing.wait(row['operation_id'],reason)
+                return
+            try: library.space(256*1024**2)
+            except ValueError:
+                processing.wait(row['operation_id'],'Waiting for disk space while keeping the 8 GB reserve.')
+                return
+            try:
+                spec=row['request']
+                # Rebuild from the public choices and compare all pinned versions.
+                choices={k:spec[k] for k in ('asset_id','start_seconds','end_seconds','performers','instrument','bass_part','guidance') if k in spec}
+                if mixed_spec(choices)!=spec:
+                    raise ValueError('The processing software changed. Review and add a new request.')
+                if not await asyncio.to_thread(library.verify,spec['asset_id']):
+                    raise ValueError('The saved original failed verification. Restore it before trying again.')
+            except (HTTPException,ValueError,KeyError,OSError) as error:
+                claimed=processing.claim_next(expected_id=row['operation_id'])
+                if claimed: processing.finish(claimed['operation_id'],'failed',reason=getattr(error,'detail',str(error)),claim_token=claimed['claim_token'])
+                return
+            ready,reason=admission.check()
+            if not ready:
+                processing.wait(row['operation_id'],reason)
+                return
+            claimed=processing.claim_next(expected_id=row['operation_id'])
+            if claimed is None: return
+            with library.connect() as db:
+                db.execute('INSERT OR REPLACE INTO jobs VALUES (?,?,?,?,?,?,?)',
+                    (identity,'queued',0,json.dumps(spec),None,None,time.time()))
+            ready,reason=admission.before_start()
+            if not ready:
+                processing.wait(claimed['operation_id'],reason,claim_token=claimed['claim_token'])
+                return
+            try:
+                processes[identity]=subprocess.Popen([sys.executable,str(ROOT/'worker.py'),str(library.root),identity],cwd=ROOT,
+                    stdin=subprocess.PIPE,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+            except OSError:
+                reason='The local worker could not start. Your request and original are preserved.'
+                library.update_job(identity,'failed',error=reason)
+                processing.finish(claimed['operation_id'],'failed',reason=reason,claim_token=claimed['claim_token'])
+            admission.reset()
+
+    async def processing_loop():
+        while True:
+            try:
+                await processing_tick()
+                app.state.processing_error=None
+            except (OSError,ValueError,RuntimeError,sqlite3.Error):
+                # Keep the durable request. Do not invent a completed receipt or
+                # launch another process after an uncertain state transition.
+                app.state.processing_error='The processing queue needs attention on the laptop.'
+            await asyncio.sleep(2)
+
+    app.state.processing_tick=processing_tick
+
+    @app.get('/api/processing-queue')
+    def processing_list(offset:int=0):
+        if not 0<=offset<=10000: raise HTTPException(400,'Invalid history page.')
+        active=processing.list(states=('queued','waiting_resources','running','cancel_requested'))
+        history=processing.list(states=('complete','failed','cancelled'),limit=100,offset=offset)
+        return {'items':[processing_receipt(row) for row in active],
+                'history':[processing_receipt(row) for row in history], 'history_offset':offset,
+                'reason':getattr(app.state,'processing_error',None)}
+
+    @app.get('/api/processing-queue/{operation_id}')
+    def processing_get(operation_id:str):
+        try: return processing_receipt(processing.get(operation_id))
+        except (KeyError,ValueError): raise HTTPException(404,'Processing request not found.')
+
+    @app.post('/api/processing-queue')
+    @serialized_preview
+    async def processing_submit(request:Request):
+        try:
+            value=json.loads(await small_body(request,4096))
+            if type(value) is not dict or set(value)!={'operation_id','request'}:
+                raise ValueError('Choose a processing request and operation ID.')
+            # Strict UUID validation also prevents this identity becoming a path.
+            if str(uuid.UUID(value['operation_id']))!=value['operation_id']: raise ValueError('Invalid operation ID.')
+            try: existing=processing.get(value['operation_id'])
+            except KeyError: existing=None
+            spec=mixed_spec(value['request'],frozen=existing['request'] if existing else None)
+            if existing is None and not await asyncio.to_thread(library.verify,spec['asset_id']):
+                raise ValueError('The laptop original failed verification.')
+            job_id=str(uuid.uuid5(uuid.NAMESPACE_URL,json.dumps(spec,sort_keys=True)))
+            row=processing.submit(value['operation_id'],spec,job_id=job_id)
+        except QueueConflict as error: raise HTTPException(409,str(error))
+        except QueueFull as error: raise HTTPException(429,str(error))
+        except (ValueError,TypeError,KeyError,AttributeError) as error:
+            raise HTTPException(400,str(error))
+        return processing_receipt(row)
+
+    @app.post('/api/processing-queue/{operation_id}/cancel')
+    @serialized_preview
+    async def processing_cancel(operation_id:str):
+        try: row=processing.cancel(operation_id)
+        except (KeyError,ValueError): raise HTTPException(404,'Processing request not found.')
+        identity=processing_receipt(row)['job_id']
+        interested=[item for item in processing.list(states=('queued','waiting_resources','running'))
+                    if processing_receipt(item)['job_id']==identity and item['operation_id']!=operation_id]
+        if not interested and identity in processes and processes[identity].poll() is None:
+            (library.stage/(identity+'.cancel')).touch()
+        return processing_receipt(row)
+
+    @app.post('/api/arrange-preview')
+    @serialized_preview
+    async def arrange_preview(request: Request):
+        try: value=json.loads(await small_body(request,4096))
+        except ValueError: raise HTTPException(400,'Choose valid preview settings.')
+        spec=mixed_spec(value)
         identity=str(uuid.uuid5(uuid.NAMESPACE_URL,json.dumps(spec,sort_keys=True)))
         try:
             prior=checked_job(identity)

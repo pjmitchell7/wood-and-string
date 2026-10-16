@@ -8,6 +8,8 @@ Wood & String is my unfinished experiment in a private, local music player that 
 
 The prototype stores and plays local music, makes short experimental acoustic and Jazz Bass previews, and lets me inspect candidate notes or revise a saved passage. Electric guitar, optional drums, full-song arrangements and a small local AI arranger are still being developed. This source snapshot is not a ready-to-install release.
 
+There’s also a processing queue: save a short preview request on a device, send it when the laptop is reachable, and let it wait if the laptop is busy. Phone setup and real-device testing are still ahead.
+
 ## What I’m learning
 
 The first previews were choppy. Getting pitches into a guitar sound wasn’t enough: ringing notes, repeated attacks, rests, phrasing and the identity of the important part all matter. Following the vocal melody can miss the guitar pattern that made me interested in the song in the first place.
@@ -16,4 +18,4 @@ That has shaped the engineering: keep originals intact, preserve source timing, 
 
 Next is making those musical decisions better, then returning to real-song listening comparisons. The two songs above are inspirations and planned tests, not examples I’ve already recreated successfully.
 
-This repository contains source and tests. Recordings, sample banks, model weights, downloaded runtimes and private development data are not included. Third-party code and notices retain their own licenses.
+The public repository contains source and tests. Recordings, sample banks, model weights, downloaded runtimes and private development data are not included there. Original code is MIT licensed; [third-party code and notices](THIRD_PARTY.md) retain their own licenses.

@@ -1,5 +1,5 @@
-const SHELL='wood-shell-v22',MEDIA='wood-media-v1';
-const ASSETS=['/','/index.html','/style.css','/app.js','/app.js?v=22','/refinement.mjs','/refinement.mjs?v=22','/instrumental.mjs','/instrumental.mjs?v=22','/backup.mjs','/capture.mjs','/capture-ui.mjs','/capture-journal.mjs','/devices.mjs','/mixed-preview.mjs','/mixed-preview.mjs?v=22','/transport.mjs','/transport.mjs?v=22','/manifest.webmanifest','/icon.svg'];
+const SHELL='wood-shell-v23',MEDIA='wood-media-v1';
+const ASSETS=['/','/index.html','/style.css','/app.js','/app.js?v=23','/refinement.mjs','/refinement.mjs?v=22','/instrumental.mjs','/instrumental.mjs?v=22','/backup.mjs','/capture.mjs','/capture-ui.mjs','/capture-journal.mjs','/devices.mjs','/mixed-preview.mjs','/mixed-preview.mjs?v=22','/transport.mjs','/transport.mjs?v=22','/processing-outbox.mjs','/processing-outbox.mjs?v=23','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(installShell()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(url.origin!==self.location.origin||event.request.method!=='GET')return;

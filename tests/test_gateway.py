@@ -50,6 +50,24 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(self.client.post('/api/'+route+'/extra',json={}).status_code,404)
         self.assertEqual(self.client.get('/instrumental.mjs?v=22').status_code,200)
 
+    def test_processing_queue_routes_keep_pairing_body_and_path_boundaries(self):
+        identity='12345678-1234-4234-9234-123456789abc'
+        for route in ('/api/processing-queue','/api/processing-queue/'+identity):
+            self.assertEqual(self.client.get(route).status_code,401)
+        self.assertEqual(self.client.post('/api/processing-queue',json={}).status_code,401)
+        self.pair()
+        for route in ('/api/processing-queue','/api/processing-queue/'+identity):
+            self.assertEqual(self.client.get(route).status_code,200)
+            self.assertEqual(self.forwarded[-1].url.path,route)
+        self.assertEqual(self.client.get('/api/processing-queue?offset=100').status_code,200)
+        self.assertEqual(self.forwarded[-1].url.params.get('offset'),'100')
+        for route in ('/api/processing-queue','/api/processing-queue/'+identity+'/cancel'):
+            self.assertEqual(self.client.post(route,json={}).status_code,200)
+            self.assertEqual(self.forwarded[-1].url.path,route)
+        self.assertEqual(self.client.post('/api/processing-queue',content=b'x'*4097).status_code,413)
+        self.assertEqual(self.client.post('/api/processing-queue/'+identity+'/extra',json={}).status_code,404)
+        self.assertEqual(self.client.get('/processing-outbox.mjs?v=23').status_code,200)
+
     def test_instrumental_selection_body_cap_supports_long_ids_without_unbounding_other_routes(self):
         self.pair();large=b'x'*(256*1024)
         self.assertEqual(self.client.post('/api/arrange-instrumental',content=large).status_code,200)

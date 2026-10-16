@@ -179,5 +179,43 @@ class GpuTrialTests(unittest.TestCase):
         self.assertEqual(result['state'],'failed');self.assertFalse(result['generation_gate_released'])
         self.assertIn('Actual tokenized prompt',result['error'])
 
+    def test_first_generation_requires_preflight_and_validates_entire_response(self):
+        from audio import qwen_prompt_audit as audit
+        from audio.arranger_baseline import make_baseline
+        from audio.arranger_completion import WINDOWS_EOG_TRAILER
+        (self.root/'model.gguf').write_bytes(b'fake')
+        self.request['operation']='generate';body=canonical(make_baseline(context()))
+        original=self.native;preflight=[]
+        def check(runtime,artifact,template):
+            self.assertEqual(artifact['context_sha256'],self.request['context_sha256'])
+            self.assertEqual(template,audit.NONTHINK_TEMPLATE);preflight.append(True)
+            return {'all_four_inputs_match':True}
+        def native(argv,**kwargs):
+            self.assertEqual(preflight,[True]);metrics=original(argv,**kwargs)
+            self.assertEqual(argv[argv.index('--n-predict')+1],'1024')
+            self.assertEqual(argv[argv.index('--verbosity')+1],'5')
+            kwargs['stdout_path'].write_bytes(body+WINDOWS_EOG_TRAILER)
+            with kwargs['stderr_path'].open('ab') as output:
+                output.write(b'n_remain: 1023\r\nfound an EOG token\r\ncommon_perf_print:    samplers time =       0.00 ms /  1001 tokens\r\n')
+            return metrics
+        with patch.object(trial,'run_native',side_effect=native),patch.object(audit,'audit_capture',return_value={
+                'count':1000,'entire_single_user_template_matches':True,'reasoning_template_state':'empty_think_block_prefilled'}):
+            receipt=trial.run_probe(self.request,lambda event:None,transport_template=audit.NONTHINK_TEMPLATE,
+                generation_tokens=1024,generation_preflight=check)
+        result=json.loads((self.directory/receipt['receipt']).read_text())
+        self.assertEqual(result['state'],'proposed',result);self.assertEqual(result['model_generated_tokens_requested'],1024)
+        self.assertEqual(result['termination']['accepted_generated_tokens_including_eog'],1)
+        self.assertEqual((self.directory/'completion.raw').read_bytes(),body)
+        self.assertEqual(json.loads((self.directory/'proposal.json').read_text()),make_baseline(context()))
+        self.assertFalse(result['generation_gate_released']);self.assertFalse(result['musical_quality_assessed'])
+
+    def test_generation_cannot_enter_through_count_worker_or_skip_preflight(self):
+        from audio.qwen_prompt_audit import NONTHINK_TEMPLATE
+        self.request['operation']='generate'
+        with self.assertRaises(ValueError):trial.run(self.request,lambda event:None)
+        with self.assertRaises(ValueError):trial.run_probe(self.request,lambda event:None,
+            transport_template=NONTHINK_TEMPLATE,generation_tokens=1024)
+        self.assertEqual(self.calls,[])
+
 
 if __name__=='__main__':unittest.main()

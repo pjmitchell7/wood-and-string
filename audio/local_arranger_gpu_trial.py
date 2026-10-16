@@ -1,6 +1,6 @@
-"""Fixed private Vulkan metadata and zero-generation model-load probes.
+"""Fixed private Vulkan probes and a separately admitted symbolic forward trial.
 
-No app endpoint, supplied songs, proposal generation, playback or downloads.
+No app endpoint, supplied songs, playback or downloads.
 The CPU experiment stays unchanged; this uses its own reviewed resource profile.
 """
 from contextlib import ExitStack
@@ -31,12 +31,13 @@ def runtime_guard():
     return protect_runtime()
 
 
-def validate_request(request,trial_root=None):
+def validate_request(request,trial_root=None,allow_generation=False):
     if type(request) is not dict or not {'operation','work_dir'}<=request.keys() or request.keys()-{
             'operation','work_dir','context_sha256','device_receipt_sha256'}:
         raise ValueError('Expected fixed private GPU probe request')
     op=request['operation']
-    if type(op) is not str or op not in OPERATIONS:raise ValueError('Unsupported GPU probe operation')
+    operations=OPERATIONS|{'generate'} if allow_generation else OPERATIONS
+    if type(op) is not str or op not in operations:raise ValueError('Unsupported GPU probe operation')
     if type(request['work_dir']) is not str:raise ValueError('Expected owned GPU probe directory')
     original=Path(request['work_dir'])
     if not original.is_absolute() or not original.is_dir():raise ValueError('Expected existing absolute GPU probe directory')
@@ -48,7 +49,7 @@ def validate_request(request,trial_root=None):
             raise ValueError('Linked GPU trial directory is unsupported')
         if path==base:break
     for key in ('context_sha256','device_receipt_sha256'):
-        if op=='count':
+        if op in ('count','generate'):
             if type(request.get(key)) is not str or not re.fullmatch('[0-9a-f]{64}',request[key]):
                 raise ValueError('Expected exact frozen '+key)
         elif key in request:raise ValueError('Metadata probe has unexpected model inputs')
@@ -89,11 +90,11 @@ def device_evidence(request,runtime,stack,device_result=None):
     return selected
 
 
-def count_argv(runtime,directory,device,template=None):
+def count_argv(runtime,directory,device,template=None,generation_tokens=0):
     # Frozen application vector; no caller flags, automatic fitting or layer retry.
     argv=[runtime['executable'],'--model',runtime['model'],'--offline',
         '--device',device,'--split-mode','none','--gpu-layers','all','--fit','off',
-        '--threads','4','--threads-batch','4','--ctx-size','4096','--n-predict','0',
+        '--threads','4','--threads-batch','4','--ctx-size','4096','--n-predict',str(generation_tokens),
         '--batch-size','256','--ubatch-size','128','--cache-type-k','f16','--cache-type-v','f16',
         '--no-context-shift','--jinja','--conversation','--single-turn','--reasoning','off',
         '--reasoning-budget','0','--json-schema-file',str(directory/'proposal.schema.json'),
@@ -104,6 +105,7 @@ def count_argv(runtime,directory,device,template=None):
         argv[argv.index('--file')]='--binary-file'
         argv.extend(['--no-escape','--chat-template-file',str(template),'--verbosity','4',
             '--no-log-prefix','--no-log-timestamps','--log-colors','off','--no-log-jsonl'])
+        if generation_tokens:argv[argv.index('--verbosity')+1]='5'
     return argv
 
 
@@ -121,28 +123,38 @@ def offload_evidence(raw,selected):
     return {'offloaded_layers':int(rows[0][0]),'total_layers':int(rows[0][1]),
             'current_device':devices[0][0],'current_description':devices[0][1],
             'current_device_id':devices[0][2],'vulkan_budget_available_mib_at_selection':int(devices[0][3]),
-            'claim':'Reported model/context initialization only; no prefill or generation kernels tested.'}
+            'claim':'These initialization log lines establish requested layer offload, not forward performance or musical quality.'}
 
 
-def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,transport_template=None):
+def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,transport_template=None,
+              generation_tokens=0,generation_preflight=None):
     """Internal shared worker; config is supplied only by fixed owned modules."""
-    op,directory=validate_request(request,trial_root=trial_root)
-    if transport_template is not None and (op!='count' or type(transport_template) is not bytes or not 0<len(transport_template)<=1024):
+    if type(generation_tokens) is not int or generation_tokens not in (0,1024):raise ValueError('Unsupported internal generation allowance')
+    generating=generation_tokens==1024
+    op,directory=validate_request(request,trial_root=trial_root,allow_generation=generating)
+    if (op=='generate')!=generating:raise ValueError('Generation requires the separate fixed trial worker')
+    model_probe=op in ('count','generate')
+    if generating and (transport_template is None or not callable(generation_preflight)):
+        raise ValueError('Generation requires an exact audited transport and prior-count preflight')
+    if transport_template is not None and (not model_probe or type(transport_template) is not bytes or not 0<len(transport_template)<=1024):
         raise ValueError('Expected bounded application-owned count transport')
     paths=[directory/(op+suffix) for suffix in ('.result.json','.attempt.json','.stdout','.stderr')]
-    if op=='count':paths.extend(directory/name for name in ('prompt.txt','proposal.schema.json','prompt-receipt.json'))
+    if model_probe:paths.extend(directory/name for name in ('prompt.txt','proposal.schema.json','prompt-receipt.json'))
     if transport_template is not None:paths.append(directory/'chat-template.jinja')
+    if generating:paths.extend(directory/name for name in ('completion.raw','proposal.json','resolved.json'))
     if any(p.exists() or p.is_symlink() for p in paths):raise FileExistsError('Preserve occupied GPU probe evidence')
     started=time.monotonic();result={'version':VERSION if version is None else version,'operation':op,'state':'started',
-        'model_generated_tokens_requested':0,'generation_gate_released':False,'profile':dict(PROFILE)}
+        'model_generated_tokens_requested':generation_tokens,'generation_gate_released':False,
+        'one_controlled_generation_trial':generating,'profile':dict(PROFILE)}
     write_json(directory/(op+'.attempt.json'),result)
     monitor=None
     try:
         with ExitStack() as evidence:
             artifact=None
-            if op=='count':
+            if model_probe:
                 stream=evidence.enter_context(_protected_reader(directory/'context.json'))
                 artifact=_context(request,directory,stream)
+                stream.seek(0);source_context=json.loads(stream.read(256*1024+1))
                 with (directory/'prompt.txt').open('xb') as output:output.write(artifact['prompt'].encode('utf-8'))
                 write_json(directory/'proposal.schema.json',artifact['schema'])
                 write_json(directory/'prompt-receipt.json',{k:v for k,v in artifact.items() if k not in ('prompt','schema')})
@@ -162,14 +174,15 @@ def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,tra
             emit({'phase':'verifying portable GPU package and existing model','progress':0})
             with runtime_guard() as runtime:
                 result['runtime_identity_sha256']=runtime['identity_sha256']
-                if op=='count':
+                if model_probe:
                     selected=device_evidence(request,runtime,evidence,device_result=device_result);result['selected_device']=selected
+                    if generating:result['prior_count_admission']=generation_preflight(runtime,artifact,transport_template)
                     gpu=evidence.enter_context(NvidiaMemory())
                     monitor=ResourceMonitor(gpu,available_ram);monitor.admit()
-                    argv=count_argv(runtime,directory,selected['device'],directory/'chat-template.jinja' if transport_template is not None else None)
+                    argv=count_argv(runtime,directory,selected['device'],directory/'chat-template.jinja' if transport_template is not None else None,generation_tokens=generation_tokens)
                 else:argv=[runtime['executable'],'--list-devices' if op=='devices' else '--'+op]
                 result['argv']=argv
-                emit({'phase':'loading model for zero-generation GPU check' if op=='count' else 'checking GPU runtime metadata','progress':.1})
+                emit({'phase':'generating first bounded symbolic proposal' if generating else 'loading model for zero-generation GPU check' if model_probe else 'checking GPU runtime metadata','progress':.1})
                 try:
                     metrics=run_native(argv,cwd=directory,stdout_path=directory/(op+'.stdout'),stderr_path=directory/(op+'.stderr'),
                         wall_seconds=PROFILE['native_wall_seconds'] if monitor else 20,
@@ -183,13 +196,13 @@ def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,tra
                 if transport_template is not None:
                     from .qwen_prompt_audit import audit_capture
                     with _protected_reader(Path(runtime['model'])) as model_stream:
-                        audit=audit_capture((directory/'count.stderr').read_bytes(),model_stream,artifact['prompt'].encode('utf-8'))
+                        audit=audit_capture((directory/(op+'.stderr')).read_bytes(),model_stream,artifact['prompt'].encode('utf-8'))
                     result['prompt_audit']=audit
                     if (audit.get('entire_single_user_template_matches') is not True
                             or audit.get('reasoning_template_state')!='empty_think_block_prefilled'):
                         raise ValueError('Actual tokenized prompt did not preserve exact evidence and explicit nonthinking transport')
-            if op=='count':
-                raw=(directory/'count.stderr').read_bytes();tokens=parse_prompt_count(raw)
+            if model_probe:
+                raw=(directory/(op+'.stderr')).read_bytes();tokens=parse_prompt_count(raw)
                 if 'prompt_audit' in result and result['prompt_audit'].get('count')!=tokens:
                     raise ValueError('Native count and full token-piece audit disagree')
                 result.update(prompt_tokens=tokens,context_tokens=4096,required_output_reserve=1024,
@@ -198,6 +211,19 @@ def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,tra
                     actual_reasoning_prompt_review=('Exact user bytes and nonthinking assistant prefix verified from actual token pieces; generation still gated.'
                         if 'prompt_audit' in result else 'Pending inspection of actual verbose tokenized prompt; no generation gate released.'))
                 result['state']='counted' if tokens<=3072 else 'rejected_prompt_budget'
+                if generating:
+                    if tokens>3072:raise ValueError('Generation process violated prior prompt budget')
+                    from .arranger_completion import extract_completion,verify_eog
+                    from .arranger_prompt import parse_response
+                    result['termination']=verify_eog(raw,prompt_count=tokens,token_budget=generation_tokens)
+                    completion=extract_completion((directory/'generate.stdout').read_bytes())
+                    with (directory/'completion.raw').open('xb') as output:output.write(completion)
+                    proposal,resolved=parse_response(source_context,completion)
+                    write_json(directory/'proposal.json',proposal);write_json(directory/'resolved.json',resolved)
+                    result.update(state='proposed',normal_eog_trailer_observed=True,
+                        proposal_status=proposal['status'],resolved_note_count=len(resolved['notes']),
+                        completion_bytes=len(completion),completion_sha256=hashlib.sha256(completion).hexdigest(),
+                        musical_quality_assessed=False)
             else:
                 if op=='devices':result['selected_device']=parse_devices((directory/'devices.stdout').read_bytes())
                 result['state']='checked'
@@ -206,6 +232,9 @@ def run_probe(request,emit,*,trial_root=None,device_result=None,version=None,tra
         if monitor:result['resources']=monitor.receipt()
     result['elapsed_seconds']=time.monotonic()-started
     result['captures']={p.name:{'bytes':p.stat().st_size,'sha256':digest(p)} for p in (directory/(op+'.stdout'),directory/(op+'.stderr')) if p.is_file()}
+    if generating:
+        result['output_files']={p.name:{'bytes':p.stat().st_size,'sha256':digest(p)} for p in
+            (directory/'completion.raw',directory/'proposal.json',directory/'resolved.json') if p.is_file()}
     path=directory/(op+'.result.json');write_json(path,result)
     return {'state':result['state'],'receipt':path.name,'bytes':path.stat().st_size,'sha256':digest(path)}
 

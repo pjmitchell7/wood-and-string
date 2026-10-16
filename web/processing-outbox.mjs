@@ -21,7 +21,7 @@ function immutable(source,request){
   need(SHA.test(source.sha256)&&Number.isSafeInteger(source.size)&&source.size>0&&source.size<=250*1048576,'Invalid local audio hash or size.');
   for(const key of ['name','type','track_id'])need(typeof source[key]==='string'&&source[key].length>0&&source[key].length<=240,'Invalid local source description.');
   need(record(request),'Expected a mixed-preview request.');
-  const allowed=new Set(['start_seconds','end_seconds','performers','instrument','bass_part','guidance']);
+  const allowed=new Set(['start_seconds','end_seconds','performers','instrument','bass_part','guidance','electric_tone']);
   need(Object.keys(request).every(k=>allowed.has(k)),'Only bounded mixed-preview fields can be queued; asset_id is assigned by the laptop.');
   const {start_seconds:start,end_seconds:end,performers}=request;
   need(typeof start==='number'&&Number.isFinite(start)&&typeof end==='number'&&Number.isFinite(end)&&start>=0&&end>start&&end-start<=30,'Choose a passage up to 30 seconds.');
@@ -32,6 +32,17 @@ function immutable(source,request){
   else need((performers===2?['melody-and-bass']:['melody','bass-line']).includes(request.bass_part||(performers===2?'melody-and-bass':'melody')),'Bass role does not match the performer count.');
   need(request.guidance===undefined||record(request.guidance),'Expected guidance data.');
   if(request.instrument==='electric')need(request.guidance?.accompaniment===undefined||request.guidance.accompaniment==='melody-and-bass','Electric previews use estimated melody and bass together.');
+  if(request.electric_tone!==undefined){
+    need(request.instrument==='electric'&&record(request.electric_tone),'Tone settings require Electric guitar.');
+    const defaults={mode:'bypass',gain_db:0,low_cut_hz:90,high_cut_hz:5500,ambience:'off',ambience_mix:0,overload:'refuse'},given=request.electric_tone;
+    need(Object.keys(given).every(key=>Object.hasOwn(defaults,key)),'Unknown tone setting.');
+    const tone={...defaults,...given};
+    need(['bypass','clean'].includes(tone.mode)&&['off','room','delay'].includes(tone.ambience)&&tone.overload==='refuse','Unsupported tone setting.');
+    for(const [key,lo,hi] of [['gain_db',-24,6],['low_cut_hz',60,160],['high_cut_hz',3500,7500],['ambience_mix',0,.25]])
+      need(typeof tone[key]==='number'&&Number.isFinite(tone[key])&&tone[key]>=lo&&tone[key]<=hi,'Tone value is outside its bound.');
+    need(tone.ambience!=='off'||tone.ambience_mix===0,'Choose ambience before setting its mix.');
+    need(tone.mode!=='bypass'||['gain_db','low_cut_hz','high_cut_hz','ambience','ambience_mix'].every(key=>tone[key]===defaults[key]),'Bypass cannot silently ignore tone settings.');
+  }
   need(new TextEncoder().encode(canonical(request)).byteLength<=4096,'Processing settings exceed the bounded request size.');
   return canonical({source,request});
 }

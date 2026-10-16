@@ -79,6 +79,25 @@ def run(root, identity, parent_gone=lambda:False):
     started=time.monotonic()
     duration_limit=240 if job['request']['kind'] in ('mixed','instrumental') else 120
     cancelled=lambda:cancel.exists() or parent_gone() or time.monotonic()-started>duration_limit
+    tone_failure_context=None
+    def retain_tone_failure(error,state):
+        if tone_failure_context is None:return None
+        from tone_preview import bounded_process,ToneRefused
+        process=getattr(error,'tone_process',tone_failure_context.get('tone_process'))
+        if process is None:
+            process={'metrics':getattr(error,'metrics',None),'cleanup':{'proven':False},
+                     'scope':'No bound tone-stage cleanup receipt was returned'}
+        diagnosis={'version':1,'stage':'effects','status':state,
+            'settings':selection['electric_tone'],
+            'expected':'Verified dry input, bounded processing and cleanup, and unclipped PCM16 export',
+            'observed':{'error_type':type(error).__name__,'detail':str(error)[:2048]},
+            'source_clock':{'sample_rate':44100,'origin_sample':origin},
+            'scope':'Effects-stage integrity, lifecycle or sample headroom only; no DSP or musical acceptance',
+            'next_discriminating_check':'Inspect the retained dry evidence and stage error before a new explicit request; do not reuse this failed output'}
+        if isinstance(error,ToneRefused):
+            diagnosis['observed']['headroom']=bounded_process(error.diagnosis)
+            diagnosis['next_discriminating_check']='Choose a lower explicit gain and compare unchanged dry evidence'
+        return {**tone_failure_context,'effects_failure':diagnosis,'tone_process':bounded_process(process)}
     try:
         library.update_job(identity,'running',0)
         spec=job['request'];report=None
@@ -101,7 +120,8 @@ def run(root, identity, parent_gone=lambda:False):
         if spec['kind']=='instrumental-arrange':
             from instrumental_preview import prepare_arrangement,arrange_review
             prepared=prepare_arrangement(library,{key:spec[key] for key in ('parent_job_id','interpretation','note_ids','accept_as_lead')} |
-                {'instrument':spec.get('instrument','acoustic')})
+                {'instrument':spec.get('instrument','acoustic')} |
+                ({'electric_tone':spec['electric_tone']} if 'electric_tone' in spec else {}))
             if prepared['spec']!=spec:raise ValueError('The saved candidate review changed. Select the notes again.')
             source=prepared['source'];source_id=source['source_id'];origin=prepared['bundle']['origin']
             arrangement=arrange_review(prepared)
@@ -230,7 +250,9 @@ def run(root, identity, parent_gone=lambda:False):
         else:
             arrangement['render_origin_sample']=origin
         renderer={'acoustic':render,'jazz-bass':render_bass,'electric':render_electric}[instrument]
-        metrics=renderer(arrangement,output,cancel=cancelled,progress=lambda p:library.update_job(identity,'running',.65+p*.35 if report else p))
+        has_tone='electric_tone' in selection
+        metrics=renderer(arrangement,output,cancel=cancelled,progress=lambda p:library.update_job(identity,'running',
+            .65+p*(.25 if has_tone else .35) if report else p*(.9 if has_tone else 1)))
         if cancelled(): raise InterruptedError('Cancelled')
         evidence=None
         if instrument=='electric':
@@ -238,8 +260,23 @@ def run(root, identity, parent_gone=lambda:False):
             # receipt. Wrapper metrics are a different schema and never replace it.
             evidence=RenderEvidence(library).publish(output.with_suffix('.wav.dry.f32'),
                 output.with_suffix('.wav.receipt.json'),wav_path=output,arrangement=arrangement,cancel=cancelled)
+            if has_tone:
+                with output.open('rb') as dry_input:
+                    dry_identity={'sha256':hashlib.file_digest(dry_input,'sha256').hexdigest(),'bytes':os.fstat(dry_input.fileno()).st_size}
+                tone_failure_context={'arrangement':arrangement,'analysis':report,'render_evidence':evidence,'dry_input':dry_identity}
             if cancelled(): raise InterruptedError('Cancelled')
-        item=library.publish(output,filename,'audio/wav',kind=kind,source_id=source_id)
+        publication=output;tone_reference=tone_receipt=tone_process=None
+        if has_tone:
+            from tone_preview import process_preview
+            publication,tone_reference,tone_receipt,tone_process=process_preview(library,identity,arrangement,evidence,selection,
+                cancel=cancelled,progress=lambda event:library.update_job(identity,'running',.9+.08*event.get('progress',0)),
+                wall_seconds=max(.001,duration_limit-(time.monotonic()-started)))
+            tone_failure_context['tone_process']=tone_process
+            if cancelled():raise InterruptedError('Cancelled')
+            metrics={'renderer_version':renderer_version(selection),'dry_render':metrics,'effects':tone_receipt['processing']}
+            kind+='-tone';filename=filename.replace(' - dry Electric',' - Electric').replace('.wav',' - clean tone.wav')
+            notice='Experimental Electric sample arrangement with explicit clean EQ and optional finite delay taps. Dry evidence is retained separately. Effects change the waveform and add the disclosed tail; they do not repair notes, sustain or source interpretation. No source audio is mixed in; musical acceptance remains unverified.'
+        item=library.publish(publication,filename,'audio/wav',kind=kind,source_id=source_id)
         metrics['seconds']=time.monotonic()-started
         metrics['uses_gpu']=False
         metrics['published_bytes']=item['size']
@@ -254,16 +291,19 @@ def run(root, identity, parent_gone=lambda:False):
                 metrics['peak_working_set_bytes']=counters.PeakWorkingSetSize
         result={'asset':item,'arrangement':arrangement,'metrics':metrics,'notice':notice,'analysis':report}
         if evidence is not None:result['render_evidence']=evidence
+        if tone_reference is not None:
+            result.update(tone_evidence=tone_reference,effects=tone_receipt,tone_process=tone_process)
         library.update_job(identity,'complete',1,result=result)
-    except (InterruptedError,Cancelled):
-        library.update_job(identity,'cancelled',error='Preview cancelled. Your original files are unchanged.')
+    except (InterruptedError,Cancelled) as e:
+        library.update_job(identity,'cancelled',result=retain_tone_failure(e,'cancelled'),error='Preview cancelled. Your original files are unchanged.')
     except (ValueError,wave.Error) as e:
-        library.update_job(identity,'failed',error=str(e))
-    except ManagedProcessError:
-        library.update_job(identity,'failed',error='The bounded analysis stopped or could not finish. Your original is unchanged. Try a shorter supported audio passage.')
+        library.update_job(identity,'failed',result=retain_tone_failure(e,'failed'),error=str(e))
+    except ManagedProcessError as e:
+        library.update_job(identity,'failed',result=retain_tone_failure(e,'failed'),error=(str(e) if tone_failure_context else
+            'The bounded analysis stopped or could not finish. Your original is unchanged. Try a shorter supported audio passage.'))
     except Exception as e:
         (library.stage/(identity+'.error.txt')).write_text(traceback.format_exc(),encoding='utf-8')
-        library.update_job(identity,'failed',error=f'Preview failed: {type(e).__name__}. Local error details saved.')
+        library.update_job(identity,'failed',result=retain_tone_failure(e,'failed'),error=f'Preview failed: {type(e).__name__}. Local error details saved.')
     finally:
         attention=[]
         for path in (output,cancel,analysis,analysis_partial,decoded,decoded_partial,
@@ -275,13 +315,15 @@ def run(root, identity, parent_gone=lambda:False):
         from analysis_evidence import cleanup_work,reconcile_evidence
         maintenance=[('analysis-work',lambda:cleanup_work(library,identity)),
                      ('render-evidence',lambda:reconcile_render_evidence(library))]
+        from tone_evidence import cleanup_work as cleanup_tone
+        maintenance.insert(0,('tone-work',lambda:cleanup_tone(library,identity)))
         if job['request']['kind']=='instrumental':maintenance.append(('analysis-evidence',lambda:reconcile_evidence(library)))
         # run() is called while the outer entry point owns worker.lock. Strict
         # evidence maintenance must fail closed, never replace a completed result
         # or broaden deletion after finding a malformed saved reference.
         for name,action in maintenance:
             try:action()
-            except (ValueError,OSError,sqlite3.Error) as error:
+            except (ValueError,OSError,sqlite3.Error,KeyError,TypeError) as error:
                 attention.append({'operation':name,'error_type':type(error).__name__})
         if attention:
             try:

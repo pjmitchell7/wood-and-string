@@ -10,6 +10,19 @@ from .preferences import normalize_guidance, guidance_is_default, arrange_with_p
 
 BASS_FIELDS = ('bass_part', 'bass_planner_version', 'bass_profile_version')
 ELECTRIC_FIELDS = ('electric_planner_version', 'electric_profile_version')
+TONE_FIELDS = ('electric_tone','electric_tone_version','electric_tone_window_version')
+
+
+def tone_fields(value):
+    from .electric_tone import normalize_settings, VERSION
+    from .electric_tone_stream import VERSION as WINDOW_VERSION
+    if 'electric_tone' not in value:
+        if any(key in value for key in TONE_FIELDS[1:]): raise ValueError('Missing Electric tone settings.')
+        return {}
+    settings=normalize_settings(value['electric_tone'])
+    if settings['overload']!='refuse': raise ValueError('Saved previews require tone overload refusal.')
+    if settings['mode']=='bypass': return {}
+    return dict(electric_tone=settings,electric_tone_version=VERSION,electric_tone_window_version=WINDOW_VERSION)
 
 
 def selection_fields(value, performers):
@@ -18,6 +31,8 @@ def selection_fields(value, performers):
     if type(value) is not dict:
         raise ValueError('Invalid preview instrument selection.')
     instrument = value.get('instrument', 'acoustic')
+    if instrument!='electric' and any(key in value for key in TONE_FIELDS):
+        raise ValueError('Electric tone settings require Electric guitar.')
     if instrument == 'acoustic':
         if any(key in value for key in BASS_FIELDS):
             raise ValueError('Bass part choices require Jazz Bass.')
@@ -28,7 +43,7 @@ def selection_fields(value, performers):
         if any(key in value for key in BASS_FIELDS):
             raise ValueError('Bass part choices require Jazz Bass.')
         return dict(instrument='electric', electric_planner_version=ELECTRIC_PLANNER_VERSION,
-                    electric_profile_version=ELECTRIC_PROFILE_VERSION)
+                    electric_profile_version=ELECTRIC_PROFILE_VERSION,**tone_fields(value))
     if instrument != 'jazz-bass':
         raise ValueError('Choose acoustic guitar, Electric guitar, or Jazz Bass.')
     if any(key in value for key in ELECTRIC_FIELDS):
@@ -42,6 +57,8 @@ def selection_fields(value, performers):
 
 def validate_saved_selection(spec):
     fields = selection_fields(spec, spec['performers'])
+    if any(key in spec for key in TONE_FIELDS) and 'electric_tone' not in fields:
+        raise ValueError('Saved dry previews must omit tone fields.')
     if any(spec.get(key) != value for key, value in fields.items()):
         if fields.get('instrument') == 'electric':
             raise ValueError('The Electric arrangement profile changed. Start a new preview.')
@@ -58,6 +75,9 @@ def renderer_version(selection):
                 'electric': ELECTRIC_RENDER_VERSION}
     if type(instrument) is not str or instrument not in versions:
         raise ValueError('Unsupported preview instrument.')
+    if instrument=='electric' and tone_fields(selection):
+        from tone_evidence import RENDER_VERSION
+        return RENDER_VERSION
     return versions[instrument]
 
 

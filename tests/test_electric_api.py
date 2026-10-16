@@ -65,6 +65,31 @@ class ElectricAPITests(unittest.TestCase):
             self.assertEqual(self.client.post('/api/arrange-preview', json=self.request).status_code, 503)
         self.assertEqual(len(self.children), 1)
 
+    def test_optional_tone_identity_keeps_dry_bypass_and_30_second_support(self):
+        dry=self.client.post('/api/arrange-preview',json=self.request).json()
+        bypass=self.client.post('/api/arrange-preview',json={**self.request,'electric_tone':{'mode':'bypass'}}).json()
+        self.assertEqual(dry['id'],bypass['id']);self.assertEqual(dry['request'],bypass['request'])
+        operation=str(uuid.uuid4())
+        response=self.submit(operation,end_seconds=120,electric_tone={'mode':'clean','ambience':'room','ambience_mix':.1})
+        self.assertEqual(response.status_code,200,response.text)
+        spec=response.json()['request'];self.assertEqual(spec['end_seconds']-spec['start_seconds'],30)
+        self.assertEqual(spec['renderer_version'],'electric-preview-tone-v1')
+        self.assertEqual(spec['electric_tone']['overload'],'refuse')
+        for tone in ({'mode':'clean','overload':'report'},{'mode':'clean','gain_db':True},{'unexpected':1}):
+            self.assertEqual(self.submit(str(uuid.uuid4()),electric_tone=tone).status_code,400)
+        self.assertEqual(self.submit(str(uuid.uuid4()),instrument='acoustic',electric_tone={}).status_code,400)
+
+    def test_queued_tone_retry_preserves_old_versions_but_stale_dispatch_refuses(self):
+        operation=str(uuid.uuid4());options={'electric_tone':{'mode':'clean','gain_db':-3}}
+        first=self.submit(operation,**options).json()
+        with patch('audio.electric_tone.VERSION','changed-component'):
+            retry=self.submit(operation,**options)
+            self.assertEqual(retry.status_code,200,retry.text);self.assertEqual(retry.json()['request'],first['request'])
+            self.gate.check.return_value=(True,None)
+            self.client.portal.call(self.app.state.processing_tick)
+        self.assertEqual(self.client.get('/api/processing-queue/'+operation).json()['state'],'failed')
+        self.assertFalse(self.children)
+
     def test_lost_reply_replays_frozen_profile_but_new_dispatch_rejects_stale_version(self):
         operation = str(uuid.uuid4())
         first = self.submit(operation).json()

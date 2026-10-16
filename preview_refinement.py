@@ -78,9 +78,9 @@ def prepare_refinement(library, parent_job_id, operations):
                     or arrangement.get('planner_version')!=selection['electric_planner_version']
                     or arrangement.get('profile_version')!=selection['electric_profile_version']):
                 raise ValueError('The saved Electric preview has an invalid arrangement profile.')
-            from render_evidence import RenderEvidence
+            from tone_evidence import verify_preview
             try:
-                RenderEvidence(library).verify(result['render_evidence'],wav_sha256=actual_asset['sha256'],arrangement=arrangement)
+                verify_preview(library,result,selection)
             except (ValueError,OSError) as error:
                 raise ValueError('The saved Electric dry evidence failed verification. Make a new preview before revising it.') from error
         guidance = preview_guidance(request.get('guidance'), performers, selection)

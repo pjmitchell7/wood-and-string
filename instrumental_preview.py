@@ -149,7 +149,8 @@ def checked_candidates(library,job):
     return bundle,source
 
 def prepare_arrangement(library,value):
-    if (type(value) is not dict or set(value)!={'parent_job_id','interpretation','note_ids','instrument','accept_as_lead'}
+    if (type(value) is not dict or set(value)-{'parent_job_id','interpretation','note_ids','instrument','accept_as_lead','electric_tone'}
+        or not {'parent_job_id','interpretation','note_ids','instrument','accept_as_lead'}<=set(value)
         or value['accept_as_lead'] is not True):
         raise ValueError('Select notes and explicitly accept them as a proposed lead part.')
     identity=value['parent_job_id']
@@ -164,7 +165,7 @@ def prepare_arrangement(library,value):
         raise ValueError('Select between one and4000 unique candidate notes.')
     events=bundle['interpretations'][interpretation]['events'];known={n['id'] for n in events}
     if not set(ids)<=known:raise ValueError('A selected note is not in this saved interpretation.')
-    selection=selection_fields({'instrument':value['instrument']},1)
+    selection=selection_fields({key:value[key] for key in ('instrument','electric_tone') if key in value},1)
     spec=dict(kind='instrumental-arrange',parent_job_id=identity,
               parent_result_sha256=hashlib.sha256(canonical(parent['result'])).hexdigest(),
               asset_id=source['id'],sha256=source['sha256'],performers=1,

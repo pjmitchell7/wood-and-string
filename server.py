@@ -109,6 +109,8 @@ def create_app(root=None):
                         cleanup_work(library,identity)
                         reconcile_evidence(library)
                         library.cleanup_render_staging(identity)
+                        from tone_evidence import cleanup_work as cleanup_tone
+                        cleanup_tone(library,identity)
                         reconcile_private_renders()
                 except OSError:raise HTTPException(409,'The previous analysis is finishing cleanup. Try again shortly.')
                 processes.pop(identity, None)
@@ -121,6 +123,8 @@ def create_app(root=None):
                 library.reconcile_staging()
                 from analysis_evidence import reconcile_work, reconcile_evidence
                 reconcile_work(library)
+                from tone_evidence import reconcile_work as reconcile_tone_work
+                reconcile_tone_work(library)
                 reconcile_evidence(library)
                 reconcile_private_renders()
                 processing.recover()
@@ -150,11 +154,11 @@ def create_app(root=None):
                     asset=library.get(result['result']['asset']['id'])
                     valid=library.verify(asset['id'])
                     if valid and result['request'].get('instrument')=='electric':
-                        from render_evidence import RenderEvidence
+                        from tone_evidence import verify_preview
+                        from audio.preview_instruments import validate_saved_selection
                         if asset['sha256']!=result['result']['asset']['sha256']:
                             raise ValueError('Saved Electric WAV reference changed')
-                        RenderEvidence(library).verify(result['result']['render_evidence'],wav_sha256=asset['sha256'],
-                                                       arrangement=result['result']['arrangement'])
+                        verify_preview(library,result['result'],validate_saved_selection(result['request']))
             except (KeyError,TypeError,ValueError,OSError): valid=False
             if not valid:
                 retained=result['result'] if (result['request'].get('kind')=='instrumental'
@@ -432,7 +436,8 @@ def create_app(root=None):
         if frozen is not None:
             for field in ('pipeline_version','renderer_version'): spec[field]=frozen[field]
             if selection.get('instrument','acoustic')==frozen.get('instrument','acoustic'):
-                for field in ('bass_planner_version','bass_profile_version','electric_planner_version','electric_profile_version'):
+                for field in ('bass_planner_version','bass_profile_version','electric_planner_version','electric_profile_version',
+                              'electric_tone_version','electric_tone_window_version'):
                     if field in selection: spec[field]=frozen[field]
         return spec
 
@@ -505,7 +510,7 @@ def create_app(root=None):
             try:
                 spec=row['request']
                 # Rebuild from the public choices and compare all pinned versions.
-                choices={k:spec[k] for k in ('asset_id','start_seconds','end_seconds','performers','instrument','bass_part','guidance') if k in spec}
+                choices={k:spec[k] for k in ('asset_id','start_seconds','end_seconds','performers','instrument','bass_part','guidance','electric_tone') if k in spec}
                 if mixed_spec(choices)!=spec:
                     raise ValueError('The processing software changed. Review and add a new request.')
                 if not await asyncio.to_thread(library.verify,spec['asset_id']):

@@ -195,4 +195,22 @@ await test('injected IndexedDB store persists across store instances and abort k
 await test('observer errors do not discard committed intent',async()=>{
   const r=rig(undefined,{onChange:async()=>{throw Error('Display failed')}});await r.box.enqueue(source,request);await r.box.flush();assert.equal((await r.store.get(id(1))).status,'accepted');
 });
+await test('optional Electric tone survives a lost reply with unchanged intent and no double effect application',async()=>{
+  const r=rig(),q={...request,instrument:'electric',electric_tone:{mode:'clean',gain_db:-3,ambience:'room',ambience_mix:.1}};
+  const frozen=copy(q);r.setSubmitLost();await r.box.enqueue(source,q);const initial=await r.store.get(id(1));
+  q.electric_tone.gain_db=6;await r.box.flush();await new ProcessingOutbox(r.deps).flush();
+  assert.deepEqual((await r.store.get(id(1))).request,frozen);
+  assert.equal((await r.store.get(id(1))).fingerprint,initial.fingerprint);
+  assert.deepEqual(r.calls.filter(x=>x[0]==='submit').map(x=>x[2]),[{...frozen,asset_id:id(2)},{...frozen,asset_id:id(2)}]);
+  await assert.rejects(()=>r.box.enqueue(source,q),/different/);assert.equal(r.remote.size,1);
+});
+await test('tone input refuses cross-instrument, nonfinite, booleans, hidden knobs and report-only overload',async()=>{
+  for(const change of [{instrument:'acoustic',electric_tone:{mode:'clean'}},{instrument:'jazz-bass',electric_tone:{}},
+    {electric_tone:{mode:'clean',gain_db:true}},{electric_tone:{mode:'clean',gain_db:Infinity}},
+    {electric_tone:{mode:'clean',overload:'report'}},{electric_tone:{mode:'bypass',gain_db:-3}},
+    {electric_tone:{mode:'clean',ambience_mix:.1}},{electric_tone:{mode:'clean',unknown:1}}]){
+      const r=rig();await assert.rejects(()=>r.box.enqueue(source,{...request,instrument:'electric',...change}));
+      assert.equal((await r.box.list()).length,0);assert.equal(r.calls.length,0);
+  }
+});
 console.log(`PASS: ${checks} processing-outbox checks; no browser, audio, network or native execution.`);

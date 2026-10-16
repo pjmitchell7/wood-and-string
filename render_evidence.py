@@ -436,10 +436,26 @@ def reconcile_render_evidence(library, cancel=lambda: False):
     _plain(store.root, directory=True)
     referenced = set()
     with library.connect() as db:
-        for row in db.execute('SELECT result FROM jobs WHERE result IS NOT NULL'):
+        for row in db.execute('SELECT state,request,result FROM jobs WHERE result IS NOT NULL'):
             _cancel(cancel)
-            value = json.loads(row[0])
+            value = json.loads(row['result'])
             _need(type(value) is dict, 'Malformed saved job result; preserve render evidence')
+            request=json.loads(row['request'])
+            tone=None
+            if (any(key in request for key in ('electric_tone','electric_tone_version','electric_tone_window_version'))
+                    or any(key in value for key in ('tone_evidence','effects','effects_failure','dry_input'))):
+                from tone_evidence import verify_preview,verify_failed_preview
+                from audio.preview_instruments import validate_saved_selection
+                selection=validate_saved_selection(request)
+                _need('electric_tone' in selection,'Unselected tone chain; preserve evidence')
+                if 'asset' in value:
+                    tone=verify_preview(library,value,selection,cancel=cancel)
+                elif 'render_evidence' in value or 'effects_failure' in value:
+                    verify_failed_preview(library,value,selection,row['state'],cancel=cancel)
+                else:
+                    # A planner/analysis failure may occur before dry publication.
+                    _need(not any(key in value for key in ('tone_evidence','effects','dry_input')),
+                          'Incomplete tone chain; preserve evidence')
             if 'render_evidence' in value:
                 reference = validate_reference(value['render_evidence'])
                 # A damaged reference can declare raw A but point at a receipt
@@ -455,6 +471,8 @@ def reconcile_render_evidence(library, cancel=lambda: False):
                 if 'asset' in value:
                     _need(type(value['asset']) is dict and _sha(value['asset'].get('sha256')), 'Invalid saved WAV reference')
                     wav_sha256 = value['asset']['sha256']
+                    if tone is not None:
+                        wav_sha256=tone['binding']['input']['sha256']
                 else:
                     _need(type(receipt) is dict, 'Invalid saved render receipt')
                     wav_sha256 = receipt.get('wav_sha256')

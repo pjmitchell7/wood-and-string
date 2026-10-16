@@ -75,6 +75,17 @@ class InstrumentalPreview(unittest.TestCase):
         self.assertEqual(self.bundle['interpretations']['published']['events'][0]['pitch'],64)
         self.assertEqual(result['source_part']['instrument'],'unknown')
 
+    def test_optional_electric_tone_changes_only_selection_not_candidate_evidence(self):
+        before=copy.deepcopy(self.result)
+        dry=prepare_arrangement(self.library,self.request(instrument='electric'))
+        wet=prepare_arrangement(self.library,self.request(instrument='electric',electric_tone={
+            'mode':'clean','gain_db':-3,'ambience':'room','ambience_mix':.1}))
+        self.assertNotEqual(dry['spec']['renderer_version'],wet['spec']['renderer_version'])
+        self.assertEqual(wet['spec']['electric_tone']['gain_db'],-3)
+        self.assertEqual(arrange_review(dry),arrange_review(wet))
+        self.assertEqual(self.library.job(self.parent_id)['result'],before)
+        with self.assertRaises(ValueError):prepare_arrangement(self.library,self.request(electric_tone={'mode':'clean'}))
+
     def test_invalid_identity_clock_instrument_and_nonfinite_metadata(self):
         changes=[('source_id','wrong'),('source_sha256','0'*64),('sample_rate',44100.),('origin',False),
                  ('end',self.end+1),('source_part',{'id':'umx:other','instrument':'guitar'}),

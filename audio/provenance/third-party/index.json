@@ -1,0 +1,133 @@
+[
+  {
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/LICENSE",
+    "local": "LICENSE",
+    "bytes": 1359
+  },
+  {
+    "path": "external/atomic_queue/LICENSE",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/atomic_queue/LICENSE",
+    "local": "external__atomic_queue__LICENSE",
+    "bytes": 1073
+  },
+  {
+    "path": "external/cephes/LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/cephes/LICENSE.txt",
+    "local": "external__cephes__LICENSE.txt",
+    "bytes": 5544
+  },
+  {
+    "path": "external/cxxopts/LICENSE",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/cxxopts/LICENSE",
+    "local": "external__cxxopts__LICENSE",
+    "bytes": 1055
+  },
+  {
+    "path": "external/fmidi/LICENSE.md",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/fmidi/LICENSE.md",
+    "local": "external__fmidi__LICENSE.md",
+    "bytes": 1340
+  },
+  {
+    "path": "external/jsl/LICENSE.md",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/jsl/LICENSE.md",
+    "local": "external__jsl__LICENSE.md",
+    "bytes": 1340
+  },
+  {
+    "path": "external/st_audiofile/LICENSE.md",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/st_audiofile/LICENSE.md",
+    "local": "external__st_audiofile__LICENSE.md",
+    "bytes": 1331
+  },
+  {
+    "path": "external/st_audiofile/thirdparty/stb_vorbis/LICENSE",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/external/st_audiofile/thirdparty/stb_vorbis/LICENSE",
+    "local": "external__st_audiofile__thirdparty__stb_vorbis__LICENSE",
+    "bytes": 2510
+  },
+  {
+    "path": "src/external/cpuid/LICENSE.rst",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/cpuid/LICENSE.rst",
+    "local": "src__external__cpuid__LICENSE.rst",
+    "bytes": 1621
+  },
+  {
+    "path": "src/external/cpuid/platform/LICENSE.rst",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/cpuid/platform/LICENSE.rst",
+    "local": "src__external__cpuid__platform__LICENSE.rst",
+    "bytes": 1630
+  },
+  {
+    "path": "src/external/hiir/license.txt",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/hiir/license.txt",
+    "local": "src__external__hiir__license.txt",
+    "bytes": 500
+  },
+  {
+    "path": "src/external/kiss_fft/COPYING",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/kiss_fft/COPYING",
+    "local": "src__external__kiss_fft__COPYING",
+    "bytes": 1475
+  },
+  {
+    "path": "src/external/pugixml/LICENSE.md",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/pugixml/LICENSE.md",
+    "local": "src__external__pugixml__LICENSE.md",
+    "bytes": 1079
+  },
+  {
+    "path": "src/external/spline/LICENSE",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/spline/LICENSE",
+    "local": "src__external__spline__LICENSE",
+    "bytes": 1513
+  },
+  {
+    "path": "src/external/tunings/LICENSE.md",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/src/external/tunings/LICENSE.md",
+    "local": "src__external__tunings__LICENSE.md",
+    "bytes": 1059
+  },
+  {
+    "path": "tests/catch2/LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/sfztools/sfizz/1.2.3/tests/catch2/LICENSE.txt",
+    "local": "tests__catch2__LICENSE.txt",
+    "bytes": 1338
+  },
+  {
+    "path": "external/abseil-cpp/LICENSE",
+    "url": "https://raw.githubusercontent.com/abseil/abseil-cpp/c2435f8342c2d0ed8101cb43adfd605fdc52dca2/LICENSE",
+    "local": "external__abseil-cpp__LICENSE",
+    "bytes": 11361
+  },
+  {
+    "path": "external/filesystem/LICENSE",
+    "url": "https://raw.githubusercontent.com/gulrak/filesystem/8a2edd6d92ed820521d42c94d179462bf06b5ed3/LICENSE",
+    "local": "external__filesystem__LICENSE",
+    "bytes": 1086
+  },
+  {
+    "path": "external/simde/COPYING",
+    "url": "https://raw.githubusercontent.com/simd-everywhere/simde/2bf459d4ed6d7ed6b9f31bd9e07c91bace5009e0/COPYING",
+    "local": "external__simde__COPYING",
+    "bytes": 1077
+  },
+  {
+    "path": "external/st_audiofile/thirdparty/dr_libs/LICENSE",
+    "url": "https://raw.githubusercontent.com/mackron/dr_libs/4b3d07849537ce0b71b22180c0b1335eacc6e9be/LICENSE",
+    "local": "external__st_audiofile__thirdparty__dr_libs__LICENSE",
+    "bytes": 2598
+  },
+  {
+    "path": "external/st_audiofile/thirdparty/libaiff/COPYING",
+    "url": "https://raw.githubusercontent.com/sfztools/libaiff/78864a4a2e769e426be8cfd78ae7f5f72e236c33/COPYING",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "path": "external/st_audiofile/thirdparty/wavpack/COPYING",
+    "url": "https://raw.githubusercontent.com/dbry/WavPack/07ffb331d23c16e2d2979370441f63ea722760bc/COPYING",
+    "local": "external__st_audiofile__thirdparty__wavpack__COPYING",
+    "bytes": 1557
+  }
+]

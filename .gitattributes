@@ -1,0 +1,51 @@
+# Preserve acquired reference bytes and frozen controls under Windows autocrlf.
+audio/research/basic-pitch/spotify-*-fa5997.py -text
+audio/research/basic-pitch/notices/spotify-* -text
+audio/research/basic_pitch_controls_v2.json -text
+# Exact previous service worker, including its original trailing blank line.
+web/fixtures/sw-v*.js -text whitespace=-blank-at-eof
+# Preserve the exact bytes hashed by the real-guitar and bass experiments.
+audio/growlybass.py -text
+audio/reference_notes.py -text
+audio/research/acquire_guitarset_case.py -text
+audio/research/setup_growlybass.py -text
+audio/research/probe_growlybass.py -text
+audio/research/probe_growlybass_regions.py -text
+audio/research/run_guitarset_recovery.py -text
+audio/bass_performance.py -text
+audio/bass_render.py -text
+audio/preview_instruments.py -text
+audio/research/probe_bass_adapter.py -text whitespace=cr-at-eol
+audio/research/run_bass_preview.py -text
+analysis_evidence.py -text whitespace=cr-at-eol
+instrumental_preview.py -text whitespace=cr-at-eol
+audio/instrumental_analysis.py -text whitespace=cr-at-eol
+audio/instrumental_runtime.py -text whitespace=cr-at-eol
+audio/research/run_instrumental_preview.py -text whitespace=cr-at-eol
+audio/research/probe_instrumental_cancel.py -text whitespace=cr-at-eol
+# Preserve exact symbolic benchmark and future acquisition source pins.
+audio/arranger_contract.py -text whitespace=cr-at-eol
+audio/arranger_baseline.py -text whitespace=cr-at-eol
+audio/arranger_prompt.py -text whitespace=cr-at-eol
+audio/arranger_evaluation.py -text whitespace=cr-at-eol
+audio/research/arranger_benchmark_v1.json -text whitespace=cr-at-eol
+audio/research/evaluate_arranger_benchmark.py -text whitespace=cr-at-eol
+audio/research/plan_local_arranger.py -text whitespace=cr-at-eol
+audio/research/acquire_local_arranger.py -text whitespace=cr-at-eol
+audio/native_trial_process.py -text whitespace=cr-at-eol
+audio/local_arranger_runtime.py -text whitespace=cr-at-eol
+audio/local_arranger_trial.py -text whitespace=cr-at-eol
+audio/research/probe_local_arranger_runtime.py -text whitespace=cr-at-eol
+audio/gpu_memory.py -text whitespace=cr-at-eol
+audio/gpu_trial_monitor.py -text whitespace=cr-at-eol
+audio/local_arranger_gpu_runtime.py -text whitespace=cr-at-eol
+audio/local_arranger_gpu_trial.py -text whitespace=cr-at-eol
+audio/research/probe_local_arranger_gpu.py -text whitespace=cr-at-eol
+audio/local_arranger_gpu_trial_v2.py -text whitespace=cr-at-eol
+audio/qwen_prompt_audit.py -text whitespace=cr-at-eol
+audio/research/probe_local_arranger_gpu_v2.py -text whitespace=cr-at-eol
+audio/research/setup_arranger_vulkan.py -text whitespace=cr-at-eol
+audio/research/acquire_emilyguitar.py -text whitespace=cr-at-eol
+audio/emilyguitar_probe.py -text whitespace=cr-at-eol
+audio/research/probe_emilyguitar.py -text whitespace=cr-at-eol
+audio/research/run_emilyguitar_probe.py -text whitespace=cr-at-eol

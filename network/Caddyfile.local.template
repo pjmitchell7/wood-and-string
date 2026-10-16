@@ -1,0 +1,23 @@
+{
+    admin off
+    persist_config off
+    skip_install_trust
+    local_certs
+    auto_https disable_redirects
+    storage file_system __PKI_DIRECTORY__
+    servers {
+        protocols h1 h2
+        strict_sni_host on
+    }
+}
+
+https://__LIBRARY_HOST__:8443 {
+    bind 127.0.0.1
+    tls internal
+    reverse_proxy 127.0.0.1:8766 {
+        header_up -Remote-User
+        header_up -X-Remote-User
+        header_up -X-Forwarded-User
+        header_up -X-Authenticated-User
+    }
+}

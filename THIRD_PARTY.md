@@ -1,0 +1,10 @@
+# Third-party material
+
+The root MIT license covers original Wood & String code. It does not replace the licenses of third-party material, dependencies, sample banks, models or recordings.
+
+- **Spotify Basic Pitch:** `audio/basic_pitch.py` adapts windowing/timing from Basic Pitch; `audio/basic_pitch_upstream.py` adapts its event decoder. These files retain the upstream Apache-2.0 terms and attribution. The pinned `spotify-*-fa5997.py` reference files in `audio/research/basic-pitch/` are upstream source. This project's adapters add source-sample timing, evidence reporting and bounded interfaces; they are not an unmodified upstream distribution. The full [LICENSE](audio/research/basic-pitch/notices/spotify-LICENSE) and [NOTICE](audio/research/basic-pitch/notices/spotify-NOTICE) are retained. Source revision: `fa5997af0a8210982619003269994a1be25eddf3`.
+- **sfizz reference source:** `audio/provenance/sfizz.h`, `cmake-SfizzDeps.cmake` and `.gitmodules` come from sfizz 1.2.3 under its [BSD-2-Clause license](audio/provenance/sfizz-LICENSE). No sfizz binary is bundled.
+- **Meta Steel Guitar reference mapping:** `audio/provenance/meta-steel-guitar.sfz` and related public metadata are retained with the [CC0 dedication](audio/provenance/Meta-LICENSE). No sample audio is bundled.
+- **Dependency notices:** `audio/provenance/third-party/` preserves upstream license texts and their source index for research provenance. Those libraries are not bundled here. The earlier binary dependency audit in `audio/provenance/THIRD_PARTY.md` records unresolved redistribution questions; this source release does not clear them.
+
+No downloaded runtime, model weight, sample bank, song recording, private musical annotation or generated audio is included. Research scripts refer to separately acquired artifacts and private evidence that are absent. Their presence is not a promise of a reproducible or redistributable binary release. Obtain and review each dependency's current terms separately before distributing an assembled application.

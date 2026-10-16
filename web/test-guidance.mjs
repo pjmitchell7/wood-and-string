@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {mixedPreviewRequest,previewGuidance,previewSelection,previewChoice} from './mixed-preview.mjs';
+const source={id:'original',url:'/api/media/original',name:'Song'};
+assert.deepEqual(mixedPreviewRequest(source,0,5,1),{asset_id:'original',start_seconds:0,end_seconds:5,performers:1});
+assert.deepEqual(mixedPreviewRequest(source,0,5,2,{source_notes:'  '}),{asset_id:'original',start_seconds:0,end_seconds:5,performers:2});
+const guidance={source_notes:' cafe\u0301 ',arrangement_notes:'<script>dreamy</script>',accompaniment:'melody-only'};
+const request=mixedPreviewRequest(source,2,7,1,guidance);
+assert.equal(request.guidance.version,1);assert.equal(request.guidance.source_notes,'café');
+assert.equal(request.guidance.arrangement_notes,guidance.arrangement_notes);
+assert.throws(()=>mixedPreviewRequest(source,0,5,2,guidance),/one guitarist/);
+for(const bad of [{source_notes:'x'.repeat(257)},{source_notes:[]},{source_notes:'a\0b'},{accompaniment:'dreamy'}])assert.throws(()=>previewGuidance(bad));
+// Execute actual settings restoration without browser/audio or fabricated parsing.
+const app=fs.readFileSync(new URL('./app.js',import.meta.url),'utf8');
+const code=app.slice(app.indexOf('function selectMixed('),app.indexOf("$('mixedClose').onclick"));
+const fields=Object.fromEntries(['mixedSourceNotes','mixedArrangementNotes','mixedAccompaniment','mixedPerformers','mixedPanel','mixedSource','mixedError','mixedStart','mixedEnd','mixedInstrument','mixedBassPart','mixedAccompanimentLabel','mixedBassPartLabel','mixedPartDescription','mixedSubmit','mixedBassOption','mixedBassAvailability'].map(id=>[id,{value:id==='mixedPerformers'?'1':id==='mixedInstrument'?'acoustic':'',options:[{},{}],scrollIntoView(){},focus(){}}]));
+const scope={mixedSource:null,tracks:[source],$:id=>fields[id],previewGuidance,previewSelection,previewChoice,bassAvailability:{ready:true}};vm.createContext(scope);vm.runInContext(code,scope);
+scope.restoreMixedSettings(request);
+assert.equal(scope.mixedSource.id,source.id);assert.equal(fields.mixedStart.value,2);assert.equal(fields.mixedEnd.value,7);
+assert.equal(fields.mixedSourceNotes.value,'café');assert.equal(fields.mixedArrangementNotes.value,guidance.arrangement_notes);
+assert.equal(fields.mixedAccompaniment.value,'melody-only');assert.equal(fields.mixedAccompaniment.disabled,false);
+fields.mixedPerformers.value='2';scope.updateAccompaniment();assert.equal(fields.mixedAccompaniment.value,'melody-and-bass');assert.equal(fields.mixedAccompaniment.disabled,true);assert.match(fields.mixedError.textContent,/included/);
+scope.restoreMixedSettings({...request,guidance:undefined});assert.equal(fields.mixedSourceNotes.value,'');assert.equal(fields.mixedArrangementNotes.value,'');
+console.log('PASS: optional guidance request/normalization, unchanged defaults, solo guard and exact saved request restoration; no text interpretation or playback.');

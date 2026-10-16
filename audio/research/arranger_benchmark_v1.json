@@ -1,0 +1,5772 @@
+{
+  "benchmark_version": "arranger-benchmark-v1",
+  "input_contract": "source-grounded-arranger-v1",
+  "provenance": {
+    "created": "2026-10-15",
+    "author": "independent benchmark-design agent",
+    "synthetic": true,
+    "real_song_holdout": false,
+    "all_capabilities": "virtual fixture assumptions only; no installed mode or samplebank approval",
+    "confidence": "No confidence values assigned; no probability, chord-recognition or musical-naturalness claim",
+    "case_split": "eight development and four withheld; one withheld per mode"
+  },
+  "protocol": {
+    "bars_per_case": 4,
+    "beats_per_bar": 4,
+    "clock": "absolute-source-samples",
+    "execution": "symbolic-only-no-render",
+    "max_context_events": 96,
+    "max_proposal_events": 96,
+    "source_composition": "self-created symbolic data; no acquired music or audio",
+    "proposal_attempts": 1,
+    "optional_repair_attempts": 1,
+    "repair_results_separate": true,
+    "model_context_tokens": 4096,
+    "model_output_tokens": 1024,
+    "model_wall_seconds": 120,
+    "model_resource_values": "planning limits, not measured throughput; acquisition separately approved",
+    "deterministic_baseline_wall_seconds_per_case": 5,
+    "benchmark_incremental_disk_bytes": 1048576,
+    "forbid_context_truncation": true,
+    "evaluation": "case-level hard violations, protected-ID retention, explicit omissions, octave/register changes, rests and roles; no composite music-quality score",
+    "holdout_release": "Only after baseline, prompt, schema and evaluator hashes and inference settings are frozen; no private-case tuning or repair-policy revision."
+  },
+  "cases": [
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "acoustic-dev-01",
+        "source": {
+          "source_id": "self-created:acoustic-dev-01",
+          "sample_rate": 44100,
+          "origin_sample": 5336117,
+          "end_sample": 5689937,
+          "beats": [
+            5336117,
+            5357434,
+            5380325,
+            5401068,
+            5424587,
+            5446554,
+            5467015,
+            5490128,
+            5511757,
+            5535728,
+            5556837,
+            5579318,
+            5599857,
+            5623084,
+            5644967,
+            5668980,
+            5689937
+          ]
+        },
+        "request": {
+          "mode": "acoustic",
+          "performers": 1,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "acoustic-dev-01:held-0-0",
+            "start": 5336117,
+            "end": 5412828,
+            "pitch": 40,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-01:held-0-1",
+            "start": 5343578,
+            "end": 5412828,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-01:held-0-2",
+            "start": 5351039,
+            "end": 5412828,
+            "pitch": 59,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-01:held-0-3",
+            "start": 5358579,
+            "end": 5412828,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-01:repeat-a",
+            "start": 5426784,
+            "end": 5437767,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-01:repeat-b",
+            "start": 5444357,
+            "end": 5451669,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-01:answer-a",
+            "start": 5460877,
+            "end": 5476260,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-01:answer-b",
+            "start": 5492291,
+            "end": 5504187,
+            "pitch": 66,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-01:held-8-0",
+            "start": 5511757,
+            "end": 5589588,
+            "pitch": 40,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-01:held-8-1",
+            "start": 5520147,
+            "end": 5589588,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-01:held-8-2",
+            "start": 5528537,
+            "end": 5589588,
+            "pitch": 59,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-01:held-8-3",
+            "start": 5536783,
+            "end": 5589588,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-01:cadence-a",
+            "start": 5603341,
+            "end": 5613793,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-01:cadence-b",
+            "start": 5623084,
+            "end": 5634026,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-01:cadence-c",
+            "start": 5644967,
+            "end": 5661776,
+            "pitch": 62,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-01:cadence-d",
+            "start": 5668980,
+            "end": 5685746,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "acoustic-1",
+              "instrument": "acoustic",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "Hand-authored gates distinguish ringing arpeggio strings from two attacks of the same pitch. They are exact symbolic evidence, not audio onset estimates.",
+        "desired_output": "Keep the defining arpeggio and its held tails; preserve the two separate attacks and actual rests. One raw acoustic performer, no drums."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "acoustic-dev-01:answer-a",
+          "acoustic-dev-01:answer-b",
+          "acoustic-dev-01:cadence-a",
+          "acoustic-dev-01:cadence-b",
+          "acoustic-dev-01:cadence-c",
+          "acoustic-dev-01:cadence-d",
+          "acoustic-dev-01:held-0-0",
+          "acoustic-dev-01:held-0-1",
+          "acoustic-dev-01:held-0-2",
+          "acoustic-dev-01:held-0-3",
+          "acoustic-dev-01:held-8-0",
+          "acoustic-dev-01:held-8-1",
+          "acoustic-dev-01:held-8-2",
+          "acoustic-dev-01:held-8-3",
+          "acoustic-dev-01:repeat-a",
+          "acoustic-dev-01:repeat-b"
+        ],
+        "required_omissions": [],
+        "allowed_assignments": [
+          {
+            "note_id": "acoustic-dev-01:held-0-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-0-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-0-2",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-0-3",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-8-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-8-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-8-2",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:held-8-3",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:repeat-a",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:repeat-b",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:answer-a",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:answer-b",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:cadence-a",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:cadence-b",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:cadence-c",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-01:cadence-d",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [
+          {
+            "voice_id": "acoustic-1",
+            "start": 5437767,
+            "end": 5444357
+          },
+          {
+            "voice_id": "acoustic-1",
+            "start": 5451669,
+            "end": 5460877
+          }
+        ],
+        "distinct_voice_groups": [],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "No gate truncation to turn the arpeggio into staccato.",
+          "No merged same-pitch attacks or filled rests."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "acoustic-dev-02",
+        "source": {
+          "source_id": "self-created:acoustic-dev-02",
+          "sample_rate": 44100,
+          "origin_sample": 11025,
+          "end_sample": 364845,
+          "beats": [
+            11025,
+            34544,
+            56511,
+            76972,
+            100085,
+            121714,
+            145685,
+            166794,
+            189275,
+            209814,
+            233041,
+            254924,
+            278937,
+            299894,
+            321211,
+            344102,
+            364845
+          ]
+        },
+        "request": {
+          "mode": "acoustic",
+          "performers": 2,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "acoustic-dev-02:lead-0",
+            "start": 15729,
+            "end": 38937,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-02:source-snare-0",
+            "start": 34544,
+            "end": 36301,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-02:chord-0-0",
+            "start": 49921,
+            "end": 88529,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-02:chord-0-1",
+            "start": 49921,
+            "end": 88529,
+            "pitch": 60,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-02:chord-0-2",
+            "start": 49921,
+            "end": 88529,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "acoustic-dev-02:lead-1",
+            "start": 104411,
+            "end": 126508,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-02:source-snare-1",
+            "start": 121714,
+            "end": 123632,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-02:chord-1-0",
+            "start": 138494,
+            "end": 178035,
+            "pitch": 50,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-02:chord-1-1",
+            "start": 138494,
+            "end": 178035,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-02:chord-1-2",
+            "start": 138494,
+            "end": 178035,
+            "pitch": 59,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "acoustic-dev-02:lead-2",
+            "start": 193383,
+            "end": 214459,
+            "pitch": 69,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-02:source-snare-2",
+            "start": 209814,
+            "end": 211672,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-02:chord-2-0",
+            "start": 226073,
+            "end": 266931,
+            "pitch": 48,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-02:chord-2-1",
+            "start": 226073,
+            "end": 266931,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-02:chord-2-2",
+            "start": 226073,
+            "end": 266931,
+            "pitch": 60,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "acoustic-dev-02:lead-3",
+            "start": 283128,
+            "end": 304157,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-02:source-snare-3",
+            "start": 299894,
+            "end": 301599,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-02:chord-3-0",
+            "start": 314816,
+            "end": 354474,
+            "pitch": 50,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-02:chord-3-1",
+            "start": 314816,
+            "end": 354474,
+            "pitch": 57,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "acoustic-dev-02:chord-3-2",
+            "start": 314816,
+            "end": 354474,
+            "pitch": 62,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "acoustic-1",
+              "instrument": "acoustic",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "acoustic-2",
+              "instrument": "acoustic",
+              "role": "harmony",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "The source arrangement has a lead, answering chord attacks and separate snare evidence. The lead leaves gaps rather than playing continuously.",
+        "desired_output": "Two raw acoustic guitars with separate lead and answering accompaniment. Preserve the lead rests; source percussion must not become either drums or pitched guitar notes."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "acoustic-dev-02:chord-0-0",
+          "acoustic-dev-02:chord-0-1",
+          "acoustic-dev-02:chord-0-2",
+          "acoustic-dev-02:chord-1-0",
+          "acoustic-dev-02:chord-1-1",
+          "acoustic-dev-02:chord-1-2",
+          "acoustic-dev-02:chord-2-0",
+          "acoustic-dev-02:chord-2-1",
+          "acoustic-dev-02:chord-2-2",
+          "acoustic-dev-02:chord-3-0",
+          "acoustic-dev-02:chord-3-1",
+          "acoustic-dev-02:chord-3-2",
+          "acoustic-dev-02:lead-0",
+          "acoustic-dev-02:lead-1",
+          "acoustic-dev-02:lead-2",
+          "acoustic-dev-02:lead-3"
+        ],
+        "required_omissions": [
+          "acoustic-dev-02:source-snare-0",
+          "acoustic-dev-02:source-snare-1",
+          "acoustic-dev-02:source-snare-2",
+          "acoustic-dev-02:source-snare-3"
+        ],
+        "allowed_assignments": [
+          {
+            "note_id": "acoustic-dev-02:lead-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:lead-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:lead-2",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:lead-3",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-0-0",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-0-1",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-0-2",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-1-0",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-1-1",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-1-2",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-2-0",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-2-1",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-2-2",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-3-0",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-3-1",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "acoustic-dev-02:chord-3-2",
+            "voice_ids": [
+              "acoustic-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [
+          {
+            "voice_id": "acoustic-1",
+            "start": 38937,
+            "end": 88529
+          },
+          {
+            "voice_id": "acoustic-1",
+            "start": 126508,
+            "end": 178035
+          },
+          {
+            "voice_id": "acoustic-1",
+            "start": 214459,
+            "end": 266931
+          },
+          {
+            "voice_id": "acoustic-1",
+            "start": 304157,
+            "end": 354474
+          }
+        ],
+        "distinct_voice_groups": [
+          [
+            "acoustic-1",
+            "acoustic-2"
+          ]
+        ],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Omit the four nonessential source-snare IDs explicitly.",
+          "Distinct parts must have genuinely different IDs, pitches or attack patterns, not renamed copies."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "electric-dev-01",
+        "source": {
+          "source_id": "self-created:electric-dev-01",
+          "sample_rate": 44100,
+          "origin_sample": 264701,
+          "end_sample": 618521,
+          "beats": [
+            264701,
+            285162,
+            308275,
+            329904,
+            353875,
+            374984,
+            397465,
+            418004,
+            441231,
+            463114,
+            487127,
+            508084,
+            529401,
+            552292,
+            573035,
+            596554,
+            618521
+          ]
+        },
+        "request": {
+          "mode": "electric",
+          "performers": 1,
+          "drums": true
+        },
+        "events": [
+          {
+            "id": "electric-dev-01:pulse-0-0",
+            "start": 266747,
+            "end": 288629,
+            "pitch": 64,
+            "velocity": 44,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:hat-0-0",
+            "start": 276978,
+            "end": 278001,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:hat-0-1",
+            "start": 299030,
+            "end": 300185,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:pulse-0-1",
+            "start": 310438,
+            "end": 320171,
+            "pitch": 64,
+            "velocity": 44,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:hat-0-2",
+            "start": 321252,
+            "end": 322334,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:pulse-0-2",
+            "start": 326660,
+            "end": 337095,
+            "pitch": 64,
+            "velocity": 44,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:hat-0-3",
+            "start": 344287,
+            "end": 345485,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-01:pulse-1-0",
+            "start": 355986,
+            "end": 378356,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:hat-1-0",
+            "start": 366540,
+            "end": 367596,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:hat-1-1",
+            "start": 388473,
+            "end": 389597,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:pulse-1-1",
+            "start": 399519,
+            "end": 408761,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:hat-1-2",
+            "start": 409788,
+            "end": 410815,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:pulse-1-2",
+            "start": 414923,
+            "end": 424972,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:hat-1-3",
+            "start": 431940,
+            "end": 433102,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-01:pulse-2-0",
+            "start": 443419,
+            "end": 466716,
+            "pitch": 64,
+            "velocity": 112,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:hat-2-0",
+            "start": 454361,
+            "end": 455455,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:hat-2-1",
+            "start": 477522,
+            "end": 478722,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:pulse-2-1",
+            "start": 489223,
+            "end": 498653,
+            "pitch": 64,
+            "velocity": 112,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:hat-2-2",
+            "start": 499701,
+            "end": 500749,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:pulse-2-2",
+            "start": 504940,
+            "end": 514479,
+            "pitch": 64,
+            "velocity": 112,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:hat-2-3",
+            "start": 520874,
+            "end": 521940,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-01:pulse-3-0",
+            "start": 531690,
+            "end": 555403,
+            "pitch": 64,
+            "velocity": 58,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:hat-3-0",
+            "start": 543136,
+            "end": 544280,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:hat-3-1",
+            "start": 564738,
+            "end": 565775,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:pulse-3-1",
+            "start": 575387,
+            "end": 585970,
+            "pitch": 64,
+            "velocity": 58,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:hat-3-2",
+            "start": 587146,
+            "end": 588322,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:pulse-3-2",
+            "start": 593026,
+            "end": 603144,
+            "pitch": 64,
+            "velocity": 58,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-01:hat-3-3",
+            "start": 609734,
+            "end": 610833,
+            "pitch": 42,
+            "velocity": 55,
+            "role_hint": "drums",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "electric-1",
+              "instrument": "electric",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "drums-1",
+              "instrument": "drums",
+              "role": "drums",
+              "strings": [],
+              "pitches": [
+                38,
+                42
+              ],
+              "max_polyphony": 2,
+              "max_fret_span": 0,
+              "max_fret": 0,
+              "articulations": [
+                "hats-closed",
+                "snare-hit"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "The repeated electric pitch has separate gates and phrase velocities 44,80,112,58. The hat pattern is separate source evidence. Beat intervals are deliberately nonuniform.",
+        "desired_output": "Keep the repeated-note groove, short rests and supplied phrase dynamics. Hats are permitted because explicit source hits exist; do not quantize or invent sustain."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "electric-dev-01:hat-0-0",
+          "electric-dev-01:hat-0-1",
+          "electric-dev-01:hat-0-2",
+          "electric-dev-01:hat-0-3",
+          "electric-dev-01:hat-1-0",
+          "electric-dev-01:hat-1-1",
+          "electric-dev-01:hat-1-2",
+          "electric-dev-01:hat-1-3",
+          "electric-dev-01:hat-2-0",
+          "electric-dev-01:hat-2-1",
+          "electric-dev-01:hat-2-2",
+          "electric-dev-01:hat-2-3",
+          "electric-dev-01:hat-3-0",
+          "electric-dev-01:hat-3-1",
+          "electric-dev-01:hat-3-2",
+          "electric-dev-01:hat-3-3",
+          "electric-dev-01:pulse-0-0",
+          "electric-dev-01:pulse-0-1",
+          "electric-dev-01:pulse-0-2",
+          "electric-dev-01:pulse-1-0",
+          "electric-dev-01:pulse-1-1",
+          "electric-dev-01:pulse-1-2",
+          "electric-dev-01:pulse-2-0",
+          "electric-dev-01:pulse-2-1",
+          "electric-dev-01:pulse-2-2",
+          "electric-dev-01:pulse-3-0",
+          "electric-dev-01:pulse-3-1",
+          "electric-dev-01:pulse-3-2"
+        ],
+        "required_omissions": [],
+        "allowed_assignments": [
+          {
+            "note_id": "electric-dev-01:pulse-0-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-0-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-0-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-0-0",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-0-1",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-0-2",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-0-3",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-1-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-1-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-1-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-1-0",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-1-1",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-1-2",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-1-3",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-2-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-2-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-2-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-2-0",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-2-1",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-2-2",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-2-3",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-3-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-3-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:pulse-3-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-3-0",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-3-1",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-3-2",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          },
+          {
+            "note_id": "electric-dev-01:hat-3-3",
+            "voice_ids": [
+              "drums-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "hats-closed"
+            ]
+          }
+        ],
+        "required_rest_windows": [
+          {
+            "voice_id": "electric-1",
+            "start": 320171,
+            "end": 326660
+          },
+          {
+            "voice_id": "electric-1",
+            "start": 408761,
+            "end": 414923
+          },
+          {
+            "voice_id": "electric-1",
+            "start": 498653,
+            "end": 504940
+          },
+          {
+            "voice_id": "electric-1",
+            "start": 585970,
+            "end": 593026
+          }
+        ],
+        "distinct_voice_groups": [],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Preserve symbolic velocity; this does not certify sample-bank loudness.",
+          "Drum pitch42 must use hats-closed, not snare-hit."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "electric-dev-02",
+        "source": {
+          "source_id": "self-created:electric-dev-02",
+          "sample_rate": 44100,
+          "origin_sample": 882001,
+          "end_sample": 1235821,
+          "beats": [
+            882001,
+            903630,
+            927601,
+            948710,
+            971191,
+            991730,
+            1014957,
+            1036840,
+            1060853,
+            1081810,
+            1103127,
+            1126018,
+            1146761,
+            1170280,
+            1192247,
+            1212708,
+            1235821
+          ]
+        },
+        "request": {
+          "mode": "electric",
+          "performers": 2,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "electric-dev-02:pedal-0",
+            "start": 882001,
+            "end": 964447,
+            "pitch": 48,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-02:suspension-0",
+            "start": 888490,
+            "end": 922807,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-02:upper-0",
+            "start": 899304,
+            "end": 936045,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-02:resolution-0",
+            "start": 922807,
+            "end": 957702,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "electric-dev-02:pedal-1",
+            "start": 971191,
+            "end": 1053649,
+            "pitch": 48,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-02:suspension-1",
+            "start": 977353,
+            "end": 1010312,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-02:upper-1",
+            "start": 987622,
+            "end": 1023710,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-02:resolution-1",
+            "start": 1010312,
+            "end": 1046445,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "electric-dev-02:pedal-2",
+            "start": 1060853,
+            "end": 1140538,
+            "pitch": 48,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-02:suspension-2",
+            "start": 1067140,
+            "end": 1098864,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-02:upper-2",
+            "start": 1077619,
+            "end": 1112283,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-02:resolution-2",
+            "start": 1098864,
+            "end": 1134315,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "electric-dev-02:pedal-3",
+            "start": 1146761,
+            "end": 1228887,
+            "pitch": 48,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-02:suspension-3",
+            "start": 1153817,
+            "end": 1187854,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-02:upper-3",
+            "start": 1165576,
+            "end": 1200431,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "electric-dev-02:resolution-3",
+            "start": 1187854,
+            "end": 1221953,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [
+          {
+            "id": "suspension-hypothesis",
+            "start": 882001,
+            "end": 1235821,
+            "pitch_classes": [
+              0,
+              5,
+              7
+            ],
+            "evidence_ids": [
+              "electric-dev-02:suspension-0",
+              "electric-dev-02:resolution-0",
+              "electric-dev-02:pedal-0",
+              "electric-dev-02:upper-0",
+              "electric-dev-02:suspension-1",
+              "electric-dev-02:resolution-1",
+              "electric-dev-02:pedal-1",
+              "electric-dev-02:upper-1",
+              "electric-dev-02:suspension-2",
+              "electric-dev-02:resolution-2",
+              "electric-dev-02:pedal-2",
+              "electric-dev-02:upper-2",
+              "electric-dev-02:suspension-3",
+              "electric-dev-02:resolution-3",
+              "electric-dev-02:pedal-3",
+              "electric-dev-02:upper-3"
+            ],
+            "status": "alternative"
+          },
+          {
+            "id": "upper-structure-over-pedal",
+            "start": 882001,
+            "end": 1235821,
+            "pitch_classes": [
+              0,
+              4,
+              5,
+              7
+            ],
+            "evidence_ids": [
+              "electric-dev-02:suspension-0",
+              "electric-dev-02:resolution-0",
+              "electric-dev-02:pedal-0",
+              "electric-dev-02:upper-0",
+              "electric-dev-02:suspension-1",
+              "electric-dev-02:resolution-1",
+              "electric-dev-02:pedal-1",
+              "electric-dev-02:upper-1",
+              "electric-dev-02:suspension-2",
+              "electric-dev-02:resolution-2",
+              "electric-dev-02:pedal-2",
+              "electric-dev-02:upper-2",
+              "electric-dev-02:suspension-3",
+              "electric-dev-02:resolution-3",
+              "electric-dev-02:pedal-3",
+              "electric-dev-02:upper-3"
+            ],
+            "status": "alternative"
+          }
+        ],
+        "missing_facts": [
+          {
+            "id": "chord-function-unresolved",
+            "description": "Pitch-class evidence supports more than one harmonic reading; no functional chord label has been accepted.",
+            "blocking": false
+          }
+        ],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "electric-1",
+              "instrument": "electric",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "electric-2",
+              "instrument": "electric",
+              "role": "harmony",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "The low pedal is not a certified chord root. A suspension resolves in the lead; two harmonic alternatives remain open.",
+        "desired_output": "Keep the observed suspension, its resolution and pedal as separate roles without declaring a recovered chord. Dreamy is a desired character, not permission to extend gates or add reverb."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "electric-dev-02:pedal-0",
+          "electric-dev-02:pedal-1",
+          "electric-dev-02:pedal-2",
+          "electric-dev-02:pedal-3",
+          "electric-dev-02:resolution-0",
+          "electric-dev-02:resolution-1",
+          "electric-dev-02:resolution-2",
+          "electric-dev-02:resolution-3",
+          "electric-dev-02:suspension-0",
+          "electric-dev-02:suspension-1",
+          "electric-dev-02:suspension-2",
+          "electric-dev-02:suspension-3",
+          "electric-dev-02:upper-0",
+          "electric-dev-02:upper-1",
+          "electric-dev-02:upper-2",
+          "electric-dev-02:upper-3"
+        ],
+        "required_omissions": [],
+        "allowed_assignments": [
+          {
+            "note_id": "electric-dev-02:suspension-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:resolution-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:pedal-0",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:upper-0",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:suspension-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:resolution-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:pedal-1",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:upper-1",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:suspension-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:resolution-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:pedal-2",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:upper-2",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:suspension-3",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:resolution-3",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:pedal-3",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "electric-dev-02:upper-3",
+            "voice_ids": [
+              "electric-2"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [],
+        "distinct_voice_groups": [
+          [
+            "electric-1",
+            "electric-2"
+          ]
+        ],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Both alternatives must survive in resolved evidence.",
+          "The proposal language cannot certify harmonic function or effects; unchanged gates are decisive."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "bass-dev-01",
+        "source": {
+          "source_id": "self-created:bass-dev-01",
+          "sample_rate": 44100,
+          "origin_sample": 176401,
+          "end_sample": 530221,
+          "beats": [
+            176401,
+            197144,
+            220663,
+            242630,
+            263091,
+            286204,
+            307833,
+            331804,
+            352913,
+            375394,
+            395933,
+            419160,
+            441043,
+            465056,
+            486013,
+            507330,
+            530221
+          ]
+        },
+        "request": {
+          "mode": "bass",
+          "performers": 1,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "bass-dev-01:optional-foundation-0",
+            "start": 176401,
+            "end": 258999,
+            "pitch": 31,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-01:lead-0-0",
+            "start": 178890,
+            "end": 191336,
+            "pitch": 55,
+            "velocity": 55,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-01:lead-0-1",
+            "start": 199966,
+            "end": 214078,
+            "pitch": 57,
+            "velocity": 55,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-01:lead-0-2",
+            "start": 223299,
+            "end": 236479,
+            "pitch": 59,
+            "velocity": 55,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-01:lead-0-3",
+            "start": 245085,
+            "end": 257362,
+            "pitch": 57,
+            "velocity": 55,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-01:optional-foundation-1",
+            "start": 263091,
+            "end": 348691,
+            "pitch": 33,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-01:lead-1-0",
+            "start": 265865,
+            "end": 279732,
+            "pitch": 55,
+            "velocity": 75,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-01:lead-1-1",
+            "start": 288799,
+            "end": 301777,
+            "pitch": 57,
+            "velocity": 75,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-01:lead-1-2",
+            "start": 310710,
+            "end": 325092,
+            "pitch": 59,
+            "velocity": 75,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-01:lead-1-3",
+            "start": 334337,
+            "end": 347002,
+            "pitch": 57,
+            "velocity": 75,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-01:optional-foundation-2",
+            "start": 352913,
+            "end": 436666,
+            "pitch": 35,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-01:lead-2-0",
+            "start": 355611,
+            "end": 369099,
+            "pitch": 55,
+            "velocity": 100,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-01:lead-2-1",
+            "start": 377859,
+            "end": 390182,
+            "pitch": 57,
+            "velocity": 100,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-01:lead-2-2",
+            "start": 398720,
+            "end": 412656,
+            "pitch": 59,
+            "velocity": 100,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-01:lead-2-3",
+            "start": 421786,
+            "end": 434916,
+            "pitch": 57,
+            "velocity": 100,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-01:optional-foundation-3",
+            "start": 441043,
+            "end": 525643,
+            "pitch": 31,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-01:lead-3-0",
+            "start": 443925,
+            "end": 458332,
+            "pitch": 55,
+            "velocity": 65,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-01:lead-3-1",
+            "start": 467571,
+            "end": 480145,
+            "pitch": 57,
+            "velocity": 65,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-01:lead-3-2",
+            "start": 488571,
+            "end": 501361,
+            "pitch": 59,
+            "velocity": 65,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-01:lead-3-3",
+            "start": 510077,
+            "end": 523812,
+            "pitch": 57,
+            "velocity": 65,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "bass-1",
+              "instrument": "jazz-bass",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 25,
+                  "pitches": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 33,
+                  "pitches": [
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 38,
+                  "pitches": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 43,
+                  "pitches": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63
+                  ]
+                }
+              ],
+              "max_polyphony": 4,
+              "max_fret_span": 4,
+              "max_fret": 20,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "A defining upper melody and a nonessential low foundation are separately identified in these synthetic notes.",
+        "desired_output": "Solo Jazz Bass carries the recognizable upper melody in its supplied register. Do not replace it with the lowest source line; explicitly omit optional foundation events."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "bass-dev-01:lead-0-0",
+          "bass-dev-01:lead-0-1",
+          "bass-dev-01:lead-0-2",
+          "bass-dev-01:lead-0-3",
+          "bass-dev-01:lead-1-0",
+          "bass-dev-01:lead-1-1",
+          "bass-dev-01:lead-1-2",
+          "bass-dev-01:lead-1-3",
+          "bass-dev-01:lead-2-0",
+          "bass-dev-01:lead-2-1",
+          "bass-dev-01:lead-2-2",
+          "bass-dev-01:lead-2-3",
+          "bass-dev-01:lead-3-0",
+          "bass-dev-01:lead-3-1",
+          "bass-dev-01:lead-3-2",
+          "bass-dev-01:lead-3-3"
+        ],
+        "required_omissions": [
+          "bass-dev-01:optional-foundation-0",
+          "bass-dev-01:optional-foundation-1",
+          "bass-dev-01:optional-foundation-2",
+          "bass-dev-01:optional-foundation-3"
+        ],
+        "allowed_assignments": [
+          {
+            "note_id": "bass-dev-01:lead-0-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-0-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-0-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-0-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-1-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-1-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-1-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-1-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-2-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-2-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-2-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-2-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-3-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-3-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-3-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-01:lead-3-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [],
+        "distinct_voice_groups": [],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Protect all sixteen lead IDs.",
+          "More low notes is not a success metric."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "bass-dev-02",
+        "source": {
+          "source_id": "self-created:bass-dev-02",
+          "sample_rate": 44100,
+          "origin_sample": 771337,
+          "end_sample": 1125157,
+          "beats": [
+            771337,
+            792446,
+            814927,
+            835466,
+            858693,
+            880576,
+            904589,
+            925546,
+            946863,
+            969754,
+            990497,
+            1014016,
+            1035983,
+            1056444,
+            1079557,
+            1101186,
+            1125157
+          ]
+        },
+        "request": {
+          "mode": "bass",
+          "performers": 2,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "bass-dev-02:foundation-0",
+            "start": 771337,
+            "end": 849402,
+            "pitch": 43,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-02:upper-a-0",
+            "start": 774503,
+            "end": 803687,
+            "pitch": 37,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-02:upper-b-0",
+            "start": 819035,
+            "end": 842434,
+            "pitch": 40,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "bass-dev-02:foundation-1",
+            "start": 858693,
+            "end": 938336,
+            "pitch": 44,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-02:upper-a-1",
+            "start": 861975,
+            "end": 892583,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-02:upper-b-1",
+            "start": 908780,
+            "end": 931941,
+            "pitch": 41,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "bass-dev-02:foundation-2",
+            "start": 946863,
+            "end": 1027196,
+            "pitch": 43,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-02:upper-a-2",
+            "start": 950297,
+            "end": 980126,
+            "pitch": 37,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-02:upper-b-2",
+            "start": 995201,
+            "end": 1020606,
+            "pitch": 40,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "bass-dev-02:foundation-3",
+            "start": 1035983,
+            "end": 1115569,
+            "pitch": 44,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-02:upper-a-3",
+            "start": 1039052,
+            "end": 1068001,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "bass-dev-02:upper-b-3",
+            "start": 1083883,
+            "end": 1108377,
+            "pitch": 41,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "bass-1",
+              "instrument": "jazz-bass",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 25,
+                  "pitches": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 33,
+                  "pitches": [
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 38,
+                  "pitches": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 43,
+                  "pitches": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63
+                  ]
+                }
+              ],
+              "max_polyphony": 4,
+              "max_fret_span": 4,
+              "max_fret": 20,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "bass-2",
+              "instrument": "jazz-bass",
+              "role": "bass",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 25,
+                  "pitches": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 33,
+                  "pitches": [
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 38,
+                  "pitches": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 43,
+                  "pitches": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63
+                  ]
+                }
+              ],
+              "max_polyphony": 4,
+              "max_fret_span": 4,
+              "max_fret": 20,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "Source foundation candidates sit above overlapping upper melody notes in their current octave. Their pitch classes are evidence; their target register is an arrangement choice.",
+        "desired_output": "Keep the upper counterline unchanged and place the foundation strictly below every overlapping upper note. A documented one-octave-down move of the foundation is allowed; doubling or crossing is not."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "bass-dev-02:foundation-0",
+          "bass-dev-02:foundation-1",
+          "bass-dev-02:foundation-2",
+          "bass-dev-02:foundation-3",
+          "bass-dev-02:upper-a-0",
+          "bass-dev-02:upper-a-1",
+          "bass-dev-02:upper-a-2",
+          "bass-dev-02:upper-a-3",
+          "bass-dev-02:upper-b-0",
+          "bass-dev-02:upper-b-1",
+          "bass-dev-02:upper-b-2",
+          "bass-dev-02:upper-b-3"
+        ],
+        "required_omissions": [],
+        "allowed_assignments": [
+          {
+            "note_id": "bass-dev-02:upper-a-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-b-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:foundation-0",
+            "voice_ids": [
+              "bass-2"
+            ],
+            "octaves": [
+              -1
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-a-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-b-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:foundation-1",
+            "voice_ids": [
+              "bass-2"
+            ],
+            "octaves": [
+              -1
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-a-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-b-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:foundation-2",
+            "voice_ids": [
+              "bass-2"
+            ],
+            "octaves": [
+              -1
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-a-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:upper-b-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "bass-dev-02:foundation-3",
+            "voice_ids": [
+              "bass-2"
+            ],
+            "octaves": [
+              -1
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [],
+        "distinct_voice_groups": [
+          [
+            "bass-1",
+            "bass-2"
+          ]
+        ],
+        "foundation_below": [
+          {
+            "lower_voice_id": "bass-2",
+            "upper_voice_id": "bass-1"
+          }
+        ],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Each source foundation needs a −12-semitone receipt, never a hidden source-pitch rewrite.",
+          "Check every overlap, including melody that enters after a foundation begins."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "ensemble-dev-01",
+        "source": {
+          "source_id": "self-created:ensemble-dev-01",
+          "sample_rate": 44100,
+          "origin_sample": 220501,
+          "end_sample": 574321,
+          "beats": [
+            220501,
+            241040,
+            264267,
+            286150,
+            310163,
+            331120,
+            352437,
+            375328,
+            396071,
+            419590,
+            441557,
+            462018,
+            485131,
+            506760,
+            530731,
+            551840,
+            574321
+          ]
+        },
+        "request": {
+          "mode": "ensemble",
+          "performers": 3,
+          "drums": false
+        },
+        "events": [
+          {
+            "id": "ensemble-dev-01:foundation-0",
+            "start": 220501,
+            "end": 302959,
+            "pitch": 36,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-01:lead-0",
+            "start": 227690,
+            "end": 257299,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-01:answer-0-0",
+            "start": 261944,
+            "end": 295755,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-01:answer-0-1",
+            "start": 261944,
+            "end": 295755,
+            "pitch": 60,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-01:foundation-1",
+            "start": 310163,
+            "end": 389848,
+            "pitch": 35,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-01:lead-1",
+            "start": 317498,
+            "end": 346042,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-01:answer-1-0",
+            "start": 350305,
+            "end": 383625,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-01:answer-1-1",
+            "start": 350305,
+            "end": 383625,
+            "pitch": 59,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-01:foundation-2",
+            "start": 396071,
+            "end": 478197,
+            "pitch": 33,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-01:lead-2",
+            "start": 404303,
+            "end": 434967,
+            "pitch": 69,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-01:answer-2-0",
+            "start": 439360,
+            "end": 471263,
+            "pitch": 57,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-01:answer-2-1",
+            "start": 439360,
+            "end": 471263,
+            "pitch": 60,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-01:foundation-3",
+            "start": 485131,
+            "end": 567577,
+            "pitch": 31,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-01:lead-3",
+            "start": 492701,
+            "end": 523540,
+            "pitch": 67,
+            "velocity": 80,
+            "role_hint": "melody",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-01:answer-3-0",
+            "start": 528334,
+            "end": 560832,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-01:answer-3-1",
+            "start": 528334,
+            "end": 560832,
+            "pitch": 62,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": true,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "acoustic-1",
+              "instrument": "acoustic",
+              "role": "harmony",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "electric-1",
+              "instrument": "electric",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "bass-1",
+              "instrument": "jazz-bass",
+              "role": "bass",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 25,
+                  "pitches": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 33,
+                  "pitches": [
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 38,
+                  "pitches": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 43,
+                  "pitches": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63
+                  ]
+                }
+              ],
+              "max_polyphony": 4,
+              "max_fret_span": 4,
+              "max_fret": 20,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "Lead attacks, answering acoustic dyads and long bass foundations have different source patterns.",
+        "desired_output": "Exactly one acoustic, one electric and one Jazz Bass. Preserve the three distinct responsibilities and complementary rests, with no duplicate instrument or doubled event stream."
+      },
+      "expectations": {
+        "required_status": "plan",
+        "protected_ids": [
+          "ensemble-dev-01:answer-0-0",
+          "ensemble-dev-01:answer-0-1",
+          "ensemble-dev-01:answer-1-0",
+          "ensemble-dev-01:answer-1-1",
+          "ensemble-dev-01:answer-2-0",
+          "ensemble-dev-01:answer-2-1",
+          "ensemble-dev-01:answer-3-0",
+          "ensemble-dev-01:answer-3-1",
+          "ensemble-dev-01:foundation-0",
+          "ensemble-dev-01:foundation-1",
+          "ensemble-dev-01:foundation-2",
+          "ensemble-dev-01:foundation-3",
+          "ensemble-dev-01:lead-0",
+          "ensemble-dev-01:lead-1",
+          "ensemble-dev-01:lead-2",
+          "ensemble-dev-01:lead-3"
+        ],
+        "required_omissions": [],
+        "allowed_assignments": [
+          {
+            "note_id": "ensemble-dev-01:lead-0",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-0-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-0-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:foundation-0",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:lead-1",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-1-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-1-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:foundation-1",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:lead-2",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-2-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-2-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:foundation-2",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:lead-3",
+            "voice_ids": [
+              "electric-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-3-0",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:answer-3-1",
+            "voice_ids": [
+              "acoustic-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          },
+          {
+            "note_id": "ensemble-dev-01:foundation-3",
+            "voice_ids": [
+              "bass-1"
+            ],
+            "octaves": [
+              0
+            ],
+            "articulations": [
+              "sampled-pluck"
+            ]
+          }
+        ],
+        "required_rest_windows": [],
+        "distinct_voice_groups": [
+          [
+            "acoustic-1",
+            "electric-1",
+            "bass-1"
+          ]
+        ],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "Every pitched performer must receive source-grounded material.",
+          "Three renamed copies of the melody fail even if range checks pass."
+        ]
+      }
+    },
+    {
+      "input": {
+        "version": "source-grounded-arranger-v1",
+        "case_id": "ensemble-dev-02",
+        "source": {
+          "source_id": "self-created:ensemble-dev-02",
+          "sample_rate": 44100,
+          "origin_sample": 330751,
+          "end_sample": 684571,
+          "beats": [
+            330751,
+            352634,
+            376647,
+            397604,
+            418921,
+            441812,
+            462555,
+            486074,
+            508041,
+            528502,
+            551615,
+            573244,
+            597215,
+            618324,
+            640805,
+            661344,
+            684571
+          ]
+        },
+        "request": {
+          "mode": "ensemble",
+          "performers": 3,
+          "drums": true
+        },
+        "events": [
+          {
+            "id": "ensemble-dev-02:foundation-0",
+            "start": 330751,
+            "end": 414658,
+            "pitch": 36,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-a-0",
+            "start": 336222,
+            "end": 364641,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-b-0",
+            "start": 336222,
+            "end": 364641,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:hat-0",
+            "start": 341693,
+            "end": 342787,
+            "pitch": 42,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:snare-0",
+            "start": 364641,
+            "end": 365841,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:accompaniment-0",
+            "start": 376647,
+            "end": 408263,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": false,
+            "phrase": "phrase-1"
+          },
+          {
+            "id": "ensemble-dev-02:foundation-1",
+            "start": 418921,
+            "end": 503648,
+            "pitch": 36,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-a-1",
+            "start": 424644,
+            "end": 452184,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-b-1",
+            "start": 424644,
+            "end": 452184,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:hat-1",
+            "start": 430367,
+            "end": 431511,
+            "pitch": 42,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:snare-1",
+            "start": 452184,
+            "end": 453221,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:accompaniment-1",
+            "start": 462555,
+            "end": 497058,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": false,
+            "phrase": "phrase-2"
+          },
+          {
+            "id": "ensemble-dev-02:foundation-2",
+            "start": 508041,
+            "end": 592421,
+            "pitch": 36,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-a-2",
+            "start": 513156,
+            "end": 540059,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-b-2",
+            "start": 513156,
+            "end": 540059,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:hat-2",
+            "start": 518272,
+            "end": 519295,
+            "pitch": 42,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:snare-2",
+            "start": 540059,
+            "end": 541214,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:accompaniment-2",
+            "start": 551615,
+            "end": 585230,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": false,
+            "phrase": "phrase-3"
+          },
+          {
+            "id": "ensemble-dev-02:foundation-3",
+            "start": 597215,
+            "end": 679926,
+            "pitch": 36,
+            "velocity": 80,
+            "role_hint": "bass",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-a-3",
+            "start": 602492,
+            "end": 629565,
+            "pitch": 64,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-02:competing-lead-b-3",
+            "start": 602492,
+            "end": 629565,
+            "pitch": 65,
+            "velocity": 80,
+            "role_hint": "unknown",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-02:hat-3",
+            "start": 607770,
+            "end": 608825,
+            "pitch": 42,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-02:snare-3",
+            "start": 629565,
+            "end": 630689,
+            "pitch": 38,
+            "velocity": 80,
+            "role_hint": "drums",
+            "essential": false,
+            "phrase": "phrase-4"
+          },
+          {
+            "id": "ensemble-dev-02:accompaniment-3",
+            "start": 640805,
+            "end": 672958,
+            "pitch": 55,
+            "velocity": 80,
+            "role_hint": "harmony",
+            "essential": false,
+            "phrase": "phrase-4"
+          }
+        ],
+        "harmonic_hypotheses": [],
+        "missing_facts": [
+          {
+            "id": "accepted-defining-line",
+            "description": "Each paired lead candidate is a mutually exclusive estimate; neither interpretation is accepted. Preserving the defining lead requires resolving this contradiction first.",
+            "blocking": true
+          }
+        ],
+        "capabilities": {
+          "virtual_only": true,
+          "voices": [
+            {
+              "id": "acoustic-1",
+              "instrument": "acoustic",
+              "role": "harmony",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "electric-1",
+              "instrument": "electric",
+              "role": "melody",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 40,
+                  "pitches": [
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 45,
+                  "pitches": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 50,
+                  "pitches": [
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 55,
+                  "pitches": [
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67
+                  ]
+                },
+                {
+                  "id": 4,
+                  "open_midi": 59,
+                  "pitches": [
+                    59,
+                    60,
+                    61,
+                    62,
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71
+                  ]
+                },
+                {
+                  "id": 5,
+                  "open_midi": 64,
+                  "pitches": [
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    76
+                  ]
+                }
+              ],
+              "max_polyphony": 6,
+              "max_fret_span": 4,
+              "max_fret": 12,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "bass-1",
+              "instrument": "jazz-bass",
+              "role": "bass",
+              "strings": [
+                {
+                  "id": 0,
+                  "open_midi": 25,
+                  "pitches": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45
+                  ]
+                },
+                {
+                  "id": 1,
+                  "open_midi": 33,
+                  "pitches": [
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                  ]
+                },
+                {
+                  "id": 2,
+                  "open_midi": 38,
+                  "pitches": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58
+                  ]
+                },
+                {
+                  "id": 3,
+                  "open_midi": 43,
+                  "pitches": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59,
+                    60,
+                    61,
+                    62,
+                    63
+                  ]
+                }
+              ],
+              "max_polyphony": 4,
+              "max_fret_span": 4,
+              "max_fret": 20,
+              "articulations": [
+                "sampled-pluck"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            },
+            {
+              "id": "drums-1",
+              "instrument": "drums",
+              "role": "drums",
+              "strings": [],
+              "pitches": [
+                38,
+                42
+              ],
+              "max_polyphony": 2,
+              "max_fret_span": 0,
+              "max_fret": 0,
+              "articulations": [
+                "hats-closed",
+                "snare-hit"
+              ],
+              "velocity_range": [
+                1,
+                120
+              ]
+            }
+          ]
+        },
+        "observations": "Two contradictory lead interpretations share the same windows. Strong-looking activations do not settle which is correct; all other parts are provisional.",
+        "desired_output": "Preserve the defining line accurately. If its contradictory identity cannot be resolved from the supplied facts, abstain rather than choose, blend, play both or claim certainty."
+      },
+      "expectations": {
+        "required_status": "abstain",
+        "protected_ids": [],
+        "required_omissions": [],
+        "allowed_assignments": [],
+        "required_rest_windows": [],
+        "distinct_voice_groups": [],
+        "foundation_below": [],
+        "preserve_all_source_gates": true,
+        "preserve_source_velocity": true,
+        "preserve_harmonic_alternatives": true,
+        "diagnostics": [
+          "No partial plan on whole-plan abstention.",
+          "Do not hide contradiction by dropping both lead candidates and arranging only the accompaniment."
+        ]
+      }
+    }
+  ]
+}

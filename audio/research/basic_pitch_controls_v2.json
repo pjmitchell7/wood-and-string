@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "control_set": "basic-pitch-controls-v2",
+  "frozen_against_checkpoint": "945376f",
+  "authorship": "New reviewer-authored event patterns; no acquired musical content",
+  "status": "Frozen before rendering or inference; synthetic controls held out from subsequent tuning",
+  "sample_rate": 44100,
+  "source_origin_sample": 5336117,
+  "event_timebase": "Case-local integer samples; absolute source sample is source_origin_sample plus local sample",
+  "analysis_frames": 132300,
+  "render_policy": {
+    "bank": "Meta steel OGG v1.0.0",
+    "renderer": "sfizz 1.2.3, existing dry renderer",
+    "level_policy": "legacy_fixed",
+    "reason": "Identical fixed gain across paired cases; no per-case peak normalization that changes between-case level",
+    "shared_analysis_gain": "After all eight raw cases and the specified dropout mask exist, measure the largest absolute PCM sample across the complete eight-case set. Apply one identical constant scalar to every case so that this largest sample reaches -3dBFS. Preserve raw fixed-gain files and record the scalar. No per-case gain, compression or limiter; fail if all files are zero.",
+    "string_numbering": "0=LowE,1=A,2=D,3=G,4=B,5=HighE",
+    "strings_are_commands": true,
+    "planner": "None; render explicit physically feasible string commands without reassignment",
+    "tail": "Keep existing one-second render tail, then append zeros to analysis_frames; do not truncate or shift events",
+    "playback": false
+  },
+  "frozen_evaluation": {
+    "pitch_matching": "Exact MIDI pitch, maximum-cardinality one-to-one match then minimum total absolute onset error",
+    "onset_tolerances_samples": [882, 2205],
+    "offset_interpretation": "Command release versus inferred activation end; report signed errors, do not equate acoustic tail with a second note",
+    "report": ["matched", "false_or_unmatched", "missed", "signed_onset_errors", "signed_offset_errors", "extra_octaves", "splits", "merges", "unassigned_active_frame_pitches"],
+    "forbidden_score_adjustments": ["fitted time shift", "case-specific threshold", "silent octave correction", "discarding false notes before scoring", "choosing only favorable cases"],
+    "source_origin_check": "Every accepted event must retain the nonzero source origin exactly; compare local and absolute timing separately",
+    "acceptance_limit": "No naturalness, human-playing fidelity, real-song generalization or whole-product score"
+  },
+  "cases": [
+    {
+      "id": "arpeggio-open-triad",
+      "pair": "texture",
+      "notes": [
+        {"id":"arp-g","start":11951,"end":58697,"pitch":55,"string":3,"fret":0,"player":1,"velocity":80},
+        {"id":"arp-b","start":23417,"end":58697,"pitch":59,"string":4,"fret":0,"player":1,"velocity":80},
+        {"id":"arp-e","start":35324,"end":58697,"pitch":64,"string":5,"fret":0,"player":1,"velocity":80}
+      ],
+      "expected": "Three ordered attacks, G3 then B3 then E4, with ringing overlap; do not collapse to a simultaneous chord"
+    },
+    {
+      "id": "simultaneous-open-triad",
+      "pair": "texture",
+      "notes": [
+        {"id":"chord-g","start":11951,"end":58697,"pitch":55,"string":3,"fret":0,"player":1,"velocity":80},
+        {"id":"chord-b","start":11951,"end":58697,"pitch":59,"string":4,"fret":0,"player":1,"velocity":80},
+        {"id":"chord-e","start":11951,"end":58697,"pitch":64,"string":5,"fret":0,"player":1,"velocity":80}
+      ],
+      "expected": "Three simultaneous commanded attacks on distinct open strings; do not report an invented picking order"
+    },
+    {
+      "id": "same-pitch-three-plucks",
+      "pair": "reattack",
+      "notes": [
+        {"id":"repeat-1","start":11951,"end":25622,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"repeat-2","start":33119,"end":46790,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"repeat-3","start":54287,"end":67958,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80}
+      ],
+      "expected": "Three C4 attacks and intervening commanded rests; a single long event fails this distinction"
+    },
+    {
+      "id": "same-pitch-one-sustain",
+      "pair": "reattack",
+      "notes": [
+        {"id":"sustain","start":11951,"end":67958,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80}
+      ],
+      "expected": "One C4 attack; later decay fluctuations are not new commanded plucks"
+    },
+    {
+      "id": "intentional-short-rest",
+      "pair": "rest-dropout",
+      "notes": [
+        {"id":"rest-before","start":11951,"end":30032,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"rest-after","start":32678,"end":50759,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80}
+      ],
+      "expected": "Two C4 plucks with exactly2646 commanded gap samples; actual release tails remain part of the sampled waveform"
+    },
+    {
+      "id": "sustain-with-recording-dropout",
+      "pair": "rest-dropout",
+      "notes": [
+        {"id":"dropout-underlying-sustain","start":11951,"end":50759,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80}
+      ],
+      "post_render_transform": {
+        "kind": "identical_gain_mask_both_channels",
+        "ramp_down_start": 30032,
+        "zero_start": 30473,
+        "zero_end_exclusive": 32237,
+        "ramp_up_end": 32678,
+        "definition": "Gain1 before30032; 0.5*(1+cos(pi*(i-30032)/441)) for30032<=i<30473; gain0 for30473<=i<32237; 0.5*(1-cos(pi*(i-32237)/441)) for32237<=i<32678; gain1 thereafter. Multiply existing PCM values identically in both channels, nearest-integer rounding, no normalization.",
+        "provenance": "Artificial recording corruption after one physical note command; not a guitar technique"
+      },
+      "expected": "Underlying command truth has one note. Report any inferred reattack as a split; ambiguity may be disclosed, never converted into confident invented musical intent"
+    },
+    {
+      "id": "phrase-accent-pattern",
+      "pair": "dynamics",
+      "notes": [
+        {"id":"accent-1","start":11951,"end":23417,"pitch":60,"string":4,"fret":1,"player":1,"velocity":44},
+        {"id":"accent-2","start":31355,"end":42821,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"accent-3","start":50759,"end":62225,"pitch":60,"string":4,"fret":1,"player":1,"velocity":112},
+        {"id":"accent-4","start":70163,"end":81629,"pitch":60,"string":4,"fret":1,"player":1,"velocity":58}
+      ],
+      "expected": "Four attacks with commanded velocity order44<58<80<112. Measure actual identical-window waveform energy separately; do not assume sampled layers or model activation reproduce MIDI velocity numerically"
+    },
+    {
+      "id": "phrase-flat-dynamics",
+      "pair": "dynamics",
+      "notes": [
+        {"id":"flat-1","start":11951,"end":23417,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"flat-2","start":31355,"end":42821,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"flat-3","start":50759,"end":62225,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80},
+        {"id":"flat-4","start":70163,"end":81629,"pitch":60,"string":4,"fret":1,"player":1,"velocity":80}
+      ],
+      "expected": "Four identically commanded attacks; do not invent accents from note confidence or random velocity"
+    }
+  ]
+}

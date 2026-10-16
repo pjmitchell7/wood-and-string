@@ -1,0 +1,1 @@
+"""Local acoustic arrangement diagnostics."""

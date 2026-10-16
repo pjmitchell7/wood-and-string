@@ -1,0 +1,6 @@
+// Dependency-free regression tests for offline byte-range behavior.
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const bytes=new Uint8Array([10,20,30,40,50]);
+const context={self:{addEventListener(){}},caches:{open:async()=>({match:async()=>new Response(bytes,{headers:{'Content-Type':'audio/wav'}})})},Response,Request,URL,Headers};
+vm.createContext(context);vm.runInContext(fs.readFileSync(__dirname+'/sw.js','utf8'),context);
+(async()=>{for(const [range,status,expected]of [['bytes=1-3',206,[20,30,40]],['bytes=2-',206,[30,40,50]],['bytes=-2',206,[40,50]],['bytes=0-99',206,[10,20,30,40,50]],['bytes=7-',416,[]],['bytes=3-1',416,[]],['bytes=0-1,3-4',416,[]],['bytes=-',416,[]],['bytes=-0',416,[]]]){const response=await context.media(new Request('http://localhost/offline-media/test',{headers:{Range:range}}));assert.equal(response.status,status,range);assert.deepEqual([...new Uint8Array(await response.arrayBuffer())],expected,range)}const full=await context.media(new Request('http://localhost/offline-media/test'));assert.equal(full.status,200);assert.deepEqual([...new Uint8Array(await full.arrayBuffer())],[10,20,30,40,50]);console.log('PASS: 10 offline full/range response cases')})().catch(e=>{console.error(e);process.exit(1)});

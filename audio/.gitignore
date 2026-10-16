@@ -1,0 +1,4 @@
+vendor/
+provenance/*.zip
+audio-setup-*/
+__pycache__/

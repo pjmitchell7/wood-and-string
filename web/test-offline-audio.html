@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Silent audio-engine checks</title>
+<style>body{font:17px system-ui;max-width:850px;margin:48px auto;background:#fbf6ec;color:#29281f}button{padding:12px 18px}pre{white-space:pre-wrap;border:1px solid #aaa;padding:18px}</style>
+<h1>Silent audio-engine checks</h1><p>These checks render into memory with OfflineAudioContext. They never connect to speakers or play media.</p>
+<button id="run">Run silent checks</button><pre id="result" role="status">Not run.</pre>
+<label>Local decoding test file <input id="decodeFile" type="file" accept="audio/*"></label><pre id="decodeResult" role="status">No file selected. The selected file stays in this browser and is never played.</pre>
+<script type="module" src="/test-offline-audio.mjs?v=18"></script></html>

@@ -30,6 +30,8 @@ The first previews were choppy. Getting pitches into a guitar sound wasn’t eno
 
 One useful lesson was that an engine fix left the rejected previews completely unchanged. I’m now recording what each comparison actually tells me about timing, ringing, dynamics or tone, and what still needs a listening check. Those details matter more than a single quality score.
 
+I’ve added a [phrase reader](docs/INSTRUMENTAL-PHRASE-EVIDENCE-001.md) that keeps both note interpretations and the activity around uncertain passages. Its saved-data checks pass. Choosing the main riff and interpreting those gaps are the next problems to solve.
+
 That has shaped the engineering: keep originals intact, preserve source timing, show uncertain notes and omissions, and keep vocal removal separate from recreating a performance. A successful render or a passing test doesn’t mean the arrangement sounds right.
 
 Next is making those musical decisions better, then returning to real-song listening comparisons. The two songs above are inspirations and planned tests, not examples I’ve already recreated successfully.

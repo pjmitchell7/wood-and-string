@@ -76,3 +76,13 @@ tests/test_guitarset_resynthesis.py -text
 tests/test_guitarset_resynthesis_controller.py -text
 audio/guitarset_listening.py -text
 tests/test_guitarset_listening.py -text
+audio/research/run_guitarset_listening.py -text
+tests/test_guitarset_listening_controller.py -text
+audio/guitarset_listening_v2.py -text
+audio/research/run_guitarset_listening_v2.py -text
+tests/test_guitarset_listening_v2.py -text
+tests/test_guitarset_listening_controller_v2.py -text
+audio/managed_process_receipts.py -text
+tests/test_managed_process_receipts.py -text
+audio/electric_tone.py -text
+tests/test_electric_tone.py -text

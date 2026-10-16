@@ -50,6 +50,7 @@ export function refinementDraft(job){
       const role=job.request.bass_part==='bass-line'?'bass':'melody';
       if(!remaining.some(n=>n.role===role))throw Error(`This Jazz Bass preview follows the estimated ${role==='bass'?'bass line':'melody'}. Keep at least one note in that part.`);
     }
+    if(job.request.instrument==='electric'&&!remaining.some(n=>n.role==='melody'))throw Error('This Electric preview needs at least one estimated melody note.');
     if(job.request.guidance?.accompaniment==='melody-only'&&!remaining.some(n=>n.role==='melody'))throw Error('This melody-only preview needs at least one melody note.');
     return {parent_job_id:job.id,operations:operations.map(o=>({...o,note_ids:[...o.note_ids]}))};
   }
@@ -83,10 +84,11 @@ export function mountRefinement({job,root,submit,document:doc=globalThis.documen
   }
   const panel=element('details'),heading=element('summary','Refine this passage');panel.append(heading);
   panel.append(element('p','Select estimated fragments to join into one held note, or leave notes out. Joining replaces repeated attacks and fills the gap between them; use it only where you intend a sustained note. Your original and previous preview stay unchanged.'));
-  panel.append(element('p',`The whole passage is fitted to the ${job.request.instrument==='jazz-bass'?'Jazz Bass players':'acoustic guitar players'} again. Even unedited notes may move by an octave or be left out. Review the arrangement changes before keeping the revision.`));
+  panel.append(element('p',`The whole passage is fitted to the ${job.request.instrument==='jazz-bass'?'Jazz Bass players':job.request.instrument==='electric'?'Electric guitar players':'acoustic guitar players'} again. Even unedited notes may move by an octave or be left out. Review the arrangement changes before keeping the revision.`));
   panel.append(element('p','Times are seconds from the start of this passage. These are estimated pitches, not a score verified by a musician. No pitch or timing adjustments are available here.'));
   if(job.request.guidance?.accompaniment==='melody-only')panel.append(element('p','This preview keeps your melody-only choice. Bass estimates remain visible as evidence but will not be rendered.'));
   if(job.request.instrument==='jazz-bass')panel.append(element('p',job.request.performers===2?'This experimental Jazz Bass preview keeps upper melody and lower bass foundation as separate parts.':`This experimental Jazz Bass preview keeps your choice to follow the estimated ${job.request.bass_part==='bass-line'?'bass line':'melody'}. The other part remains visible as evidence but will not be rendered.`));
+  if(job.request.instrument==='electric')panel.append(element('p','This experimental preview uses dry Electric samples, with no added amplifier, reverb or sustain. The selected instrument does not identify the source guitar; estimated notes and musical fidelity still need review.'));
   const list=element('div');list.style.maxHeight='20rem';list.style.overflowY='auto';
   const boxes=[];
   for(const note of [...draft.notes].sort((a,b)=>a.start-b.start||a.id.localeCompare(b.id))){

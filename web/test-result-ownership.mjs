@@ -11,7 +11,7 @@ const c={$,activeJob:null,activeJobKind:null,pollTimer:null,localStorage:{setIte
   jobMessage:text=>$('message').textContent=text,button:(text,fn)=>Object.assign(new Node(text),{onclick:fn}),
   action:fn=>fn(),refresh:()=>hold?new Promise(resolve=>releaseRefresh=resolve):Promise.resolve(),
   tracks:[{id:'asset'}],queue:[],play:()=>{throw Error('Playback forbidden')},download(){},
-  restoreMixedSettings(){},showSavedGuidance(){},mountRefinement(){},mixedCandidateSummary:()=>'',describeAdaptation:()=>'',
+  restoreMixedSettings(){},showSavedGuidance(){},mountRefinement(){},mountSoundDiagnostics(){},mixedCandidateSummary:()=>'',describeAdaptation:()=>'',
   originalPassage:()=>({label:'Original passage'}),comparison:{stop:()=>stops++,start:()=>starts++},
   document:{createElement:()=>new Node()},setTimeout:()=>1,clearTimeout(){},
   apiJSON:()=>new Promise(resolve=>apiResolve=resolve)};

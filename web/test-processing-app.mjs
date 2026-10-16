@@ -153,6 +153,9 @@ await test('completed queue preview cannot replace an active or starting preview
   await assert.rejects(async()=>open.onclick(),/current preview/);assert.equal(opened,0);assert.equal(c.activeJob,id(8));
   c.activeJob=null;c.refinementStarting=true;await assert.rejects(async()=>open.onclick(),/current preview/);assert.equal(opened,0);
   c.refinementStarting=false;await open.onclick();assert.equal(opened,1);
+  row.request={start_seconds:1,end_seconds:3,performers:2,instrument:'electric'};await c.drawProcessing();
+  assert.match($('processingQueue').children[0].children[0].textContent,/Dry Electric · 2 players/);
+  assert.doesNotMatch($('processingQueue').children[0].children[0].textContent,/Acoustic|Jazz Bass|bass line/);
 });
 
 await test('actual cache removal preserves pending unreceipted original and fails closed on unreadable intent storage',async()=>{

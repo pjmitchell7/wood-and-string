@@ -1,10 +1,11 @@
-import { mountRefinement, restoreSavedPreview } from './refinement.mjs?v=22';
+import { mountRefinement, restoreSavedPreview } from './refinement.mjs?v=24';
 import { scheduledTransport, prepareBuffer, engineWithFallback, playNative, nextQueueIndex } from './transport.mjs?v=22';
 import { mountCapture } from './capture-ui.mjs';
 import { preflightRestore } from './backup.mjs';
-import { mixedPreviewRequest, previewSelection, previewChoice, previewGuidance, mixedCandidateSummary, originalPassage, passagePlayer, canPreviewMixed } from './mixed-preview.mjs?v=22';
-import { instrumentalRequest, instrumentalPassage, instrumentalChanges, mountInstrumentalCandidates } from './instrumental.mjs?v=22';
-import { ProcessingOutbox, IndexedProcessingStore } from './processing-outbox.mjs?v=23';
+import { mixedPreviewRequest, previewSelection, previewChoice, previewGuidance, mixedCandidateSummary, originalPassage, passagePlayer, canPreviewMixed } from './mixed-preview.mjs?v=24';
+import { instrumentalRequest, instrumentalPassage, instrumentalChanges, mountInstrumentalCandidates } from './instrumental.mjs?v=24';
+import { ProcessingOutbox, IndexedProcessingStore } from './processing-outbox.mjs?v=24';
+import { mountSoundDiagnostics } from './sound-diagnostics.mjs?v=24';
 
 const $ = id => document.getElementById(id);
 
@@ -35,6 +36,13 @@ async function verifiedComparisonMedia(track){
 }
 
 
+const ELECTRIC_PREVIEW_ENABLED=false;
+const ELECTRIC_TESTING_REASON='Experimental Electric previews are still being tested. Saved Electric previews and settings remain available.';
+let electricAvailability={ready:false,reason:'Connect to the laptop to check experimental Electric availability.'};
+function requireElectricPreview({online=true}={}){
+  if(!ELECTRIC_PREVIEW_ENABLED)throw Error(ELECTRIC_TESTING_REASON);
+  if(online&&electricAvailability.ready!==true)throw Error(electricAvailability.reason);
+}
 let bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'};
 let instrumentalSource,instrumentalAvailability={ready:false,reason:'Connect to the laptop to check instrumental inspection availability.'};
 let extractionSource, mixedSource, activeJobKind, activeJob, pollTimer, pendingActions=0, restoreBusy=false;
@@ -58,19 +66,21 @@ async function showJob(job,token=claimResult()){
   if(token!==resultGeneration)return;
   activeJob=job.id;activeJobKind=job.request?.kind||activeJobKind||'diagnostic';
   localStorage.setItem('activeJob',job.id);localStorage.setItem('activeJobKind',activeJobKind);
-  const running=['queued','running'].includes(job.state),extracted=activeJobKind==='extract',mixed=['mixed','refine'].includes(activeJobKind),refined=activeJobKind==='refine',bassPreview=job.request?.instrument==='jazz-bass',inspection=activeJobKind==='instrumental',accepted=activeJobKind==='instrumental-arrange';
+  const running=['queued','running'].includes(job.state),extracted=activeJobKind==='extract',mixed=['mixed','refine'].includes(activeJobKind),refined=activeJobKind==='refine',bassPreview=job.request?.instrument==='jazz-bass',electricPreview=job.request?.instrument==='electric',inspection=activeJobKind==='instrumental',accepted=activeJobKind==='instrumental-arrange';
+  const previewInstrument=bassPreview?'Jazz Bass':electricPreview?'dry Electric guitar':'acoustic guitar',previewTitle=bassPreview?'Jazz Bass':electricPreview?'Electric guitar':'Acoustic guitar';
   $('diagnostic').disabled=running;$('extractSubmit').disabled=running;$('mixedSubmit').disabled=running;$('instrumentalSubmit').disabled=running;$('cancelDiagnostic').hidden=!running;
   $('diagnosticProgress').hidden=!running;$('diagnosticProgress').value=Math.max(0,Math.min(1,Number(job.progress)||0));
-  jobMessage(running?(job.state==='queued'?'Waiting to start…':`${inspection?'Estimating instrumental note candidates':accepted?'Rendering your selected notes':refined?'Rendering your refined passage':mixed?`Analyzing melody and bass, then rendering ${bassPreview?'Jazz Bass':'acoustic guitar'}`:extracted?'Analyzing and rendering melody':'Rendering sample'} · ${Math.round((Number(job.progress)||0)*100)}%`):(job.state==='cancelled'?'Cancelled. Your original and saved results remain unchanged.':job.error||(inspection?'Instrumental candidates are ready for your review.':accepted?'Selected-note preview is ready; source identity remains uncertain.':mixed?`${bassPreview?'Jazz Bass':'Acoustic guitar'} preview is ready.`:extracted?'Melody preview is ready.':'Sample phrase is ready.')));
+  jobMessage(running?(job.state==='queued'?'Waiting to start…':`${inspection?'Estimating instrumental note candidates':accepted?'Rendering your selected notes':refined?'Rendering your refined passage':mixed?`Analyzing melody and bass, then rendering ${previewInstrument}`:extracted?'Analyzing and rendering melody':'Rendering sample'} · ${Math.round((Number(job.progress)||0)*100)}%`):(job.state==='cancelled'?'Cancelled. Your original and saved results remain unchanged.':job.error||(inspection?'Instrumental candidates are ready for your review.':accepted?'Selected-note preview is ready; source identity remains uncertain.':mixed?`${previewTitle} preview is ready.`:extracted?'Melody preview is ready.':'Sample phrase is ready.')));
   if(running){pollTimer=setTimeout(()=>pollJob(),600);return}
   localStorage.removeItem('activeJob');localStorage.removeItem('activeJobKind');activeJob=null;
   if(inspection&&job.state==='complete'&&job.result?.candidates){
     const root=$('diagnosticResult');root.replaceChildren();
     localStorage.setItem('latestInstrumentalJob',job.id);$('instrumentalSaved').hidden=false;
-    mountInstrumentalCandidates({job,root,bassAvailability:()=>bassAvailability,isCurrent:()=>token===resultGeneration,
+    mountInstrumentalCandidates({job,root,bassAvailability:()=>bassAvailability,electricAvailability:()=>electricAvailability,electricEnabled:ELECTRIC_PREVIEW_ENABLED,isCurrent:()=>token===resultGeneration,
       submit:request=>action(async()=>{
         if(token!==resultGeneration)throw Error('This candidate review is no longer current.');
         if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');
+        if(request.instrument==='electric')requireElectricPreview();
         refinementStarting=true;
         try{const next=await apiJSON('/api/arrange-instrumental',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
           if(token!==resultGeneration)return;const nextToken=claimResult();comparison.stop();root.replaceChildren();await showJob(next,nextToken);
@@ -83,13 +93,14 @@ async function showJob(job,token=claimResult()){
   if(accepted&&job.state!=='complete'&&job.request?.parent_job_id){$('diagnosticResult').replaceChildren(button('Return to candidate review',async()=>{if(activeJob||refinementStarting)throw Error('Wait for the current job first.');await viewSavedJob(job.request.parent_job_id)}))}
   if(mixed){const root=$('diagnosticResult');root.replaceChildren();root.append(button('Use these preview settings',()=>restoreMixedSettings(job.request)));showSavedGuidance(job.request,root)}
   if(refined&&job.state!=='complete'&&job.request?.parent_job_id){$('diagnosticResult').append(button('Return to previous version',async()=>{if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');await viewSavedJob(job.request.parent_job_id)}))}
+  if(job.state!=='complete')mountSoundDiagnostics({job,root:$('diagnosticResult'),document});
   if(job.state==='complete'&&job.result?.asset){
     if(mixed)localStorage.setItem('latestPreviewJob',job.id);
     const item=job.result.asset;await action(refresh);if(token!==resultGeneration)return;const t=tracks.find(t=>t.id===item.id),root=$('diagnosticResult');root.replaceChildren();
-    if(t)root.append(button(mixed||accepted?`Play ${bassPreview?'Jazz Bass':'acoustic'} preview`:extracted?'Play melody preview':'Play sample',()=>{queue.push(t.id);return play(queue.length-1)}),button('Download preview',()=>download(t)));
+    if(t)root.append(button(mixed||accepted?`Play ${bassPreview?'Jazz Bass':electricPreview?'Electric guitar':'acoustic'} preview`:extracted?'Play melody preview':'Play sample',()=>{queue.push(t.id);return play(queue.length-1)}),button('Download preview',()=>download(t)));
     if(mixed||accepted){
       if(mixed){root.append(button('Use these preview settings',()=>restoreMixedSettings(job.request)));showSavedGuidance(job.request,root)}
-      if(accepted){const receipt=document.createElement('p');receipt.textContent=`Your selected instrumental candidates were assigned as a lead part for one ${bassPreview?'Jazz Bass':'acoustic guitar'}. This is your arrangement interpretation; the source instrument remains unknown.`;root.append(receipt,button('Return to candidate review',async()=>{if(activeJob||refinementStarting)throw Error('Wait for the current job first.');comparison.stop();await viewSavedJob(job.request.parent_job_id)}))}
+      if(accepted){const receipt=document.createElement('p');receipt.textContent=`Your selected instrumental candidates were assigned as a lead part for one ${previewInstrument}. This is your arrangement interpretation; the source instrument remains unknown.`;root.append(receipt,button('Return to candidate review',async()=>{if(activeJob||refinementStarting)throw Error('Wait for the current job first.');comparison.stop();await viewSavedJob(job.request.parent_job_id)}))}
       comparison.stop();
       try{const passage=accepted?instrumentalPassage(job,tracks):originalPassage(job,tracks),label=document.createElement('p');label.textContent=passage.label;
         root.append(label,button('Compare original passage',()=>{if(refinementStarting)return;claimResult();return comparison.start(passage)}),button('Stop comparison',()=>{if(!refinementStarting)claimResult();comparison.stop()}));
@@ -98,6 +109,7 @@ async function showJob(job,token=claimResult()){
     if(mixed){
       mountRefinement({job,root,submit:request=>action(async()=>{
         if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');
+        if(electricPreview)requireElectricPreview();
         refinementStarting=true;
         try{const nextToken=claimResult();const next=await apiJSON('/api/refine-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
           if(nextToken!==resultGeneration)return;comparison.stop();root.replaceChildren();await showJob(next,nextToken);
@@ -111,6 +123,7 @@ async function showJob(job,token=claimResult()){
     const warnings=job.result.analysis?.warnings||[];
     if(warnings.length){const details=document.createElement('details'),title=document.createElement('summary'),list=document.createElement('ul');title.textContent=`Analysis limits (${warnings.length})`;for(const warning of warnings){const li=document.createElement('li');li.textContent=warning;list.append(li)}details.append(title,list);root.append(details)}
     const notes=job.result.arrangement?.adaptations||[],summary=document.createElement('p');summary.className='muted';summary.textContent=accepted?instrumentalChanges(job.result.arrangement):notes.length?`Arrangement changes: ${notes.map(describeAdaptation).join('; ')}`:'No note adaptations reported for this preview.';root.append(summary);
+    mountSoundDiagnostics({job,root,document});
   }
 }
 async function pollJob(){const token=resultGeneration;try{await showJob(await apiJSON(`/api/jobs/${encodeURIComponent(activeJob)}`),token)}catch(e){if(token!==resultGeneration)return;jobMessage(`${e.message} Reopen the app to check this preview.`);$('diagnostic').disabled=false;$('extractSubmit').disabled=false;$('mixedSubmit').disabled=false;$('instrumentalSubmit').disabled=false;$('cancelDiagnostic').hidden=true}}
@@ -120,25 +133,27 @@ $('diagnostic').onclick=async()=>{if(refinementStarting)return;const token=claim
 $('cancelDiagnostic').onclick=async()=>{if(!activeJob)return;try{await apiJSON(`/api/jobs/${encodeURIComponent(activeJob)}/cancel`,{method:'POST'});jobMessage('Cancellation requested…')}catch(e){jobMessage(e.message)}};
 function selectMixed(track){if(mixedSource?.id!==track.id){$('mixedSourceNotes').value='';$('mixedArrangementNotes').value='';$('mixedAccompaniment').value='melody-and-bass';$('mixedBassPart').value='melody'}mixedSource=track;updateAccompaniment();$('mixedPanel').hidden=false;$('mixedSource').textContent=track.name;$('mixedError').textContent='';$('mixedPanel').scrollIntoView({behavior:'smooth',block:'center'});$('mixedStart').focus()}
 function updateAccompaniment(){
-  const duet=Number($('mixedPerformers').value)===2,bass=$('mixedInstrument').value==='jazz-bass';
-  if(bass)$('mixedAccompaniment').value='melody-and-bass';
+  const duet=Number($('mixedPerformers').value)===2,bass=$('mixedInstrument').value==='jazz-bass',electric=$('mixedInstrument').value==='electric';
+  if(bass||electric)$('mixedAccompaniment').value='melody-and-bass';
   if(duet&&$('mixedAccompaniment').value==='melody-only'){$('mixedAccompaniment').value='melody-and-bass';$('mixedError').textContent='Two guitarists need melody and bass; bass accompaniment is included.'}
-  $('mixedAccompaniment').disabled=duet||bass;
-  $('mixedAccompanimentLabel').hidden=bass;
+  $('mixedAccompaniment').disabled=duet||bass||electric;
+  $('mixedAccompanimentLabel').hidden=bass||electric;
   $('mixedBassPartLabel').hidden=!bass||duet;
   $('mixedBassPart').disabled=!bass||duet;
-  $('mixedPerformers').options[0].textContent=bass?'One bass player · choose a part':'One · melody and bass together';
-  $('mixedPerformers').options[1].textContent=bass?'Two bass players · upper melody + low foundation':'Two acoustics · melody + bass accompaniment';
-  $('mixedPartDescription').textContent=bass?(duet?'Upper estimated melody and low estimated bass foundation, assigned to separate bass players.':'Follow one estimated part with Jazz Bass samples. The other estimated part is explicitly omitted.'):'Acoustic guitar follows the accompaniment choice above.';
-  $('mixedSubmit').textContent=bass?'Make Jazz Bass preview':'Make acoustic preview';
+  $('mixedPerformers').options[0].textContent=bass?'One bass player · choose a part':electric?'One Electric guitar · melody and bass':'One · melody and bass together';
+  $('mixedPerformers').options[1].textContent=bass?'Two bass players · upper melody + low foundation':electric?'Two Electric guitars · upper melody + low foundation':'Two acoustics · melody + bass accompaniment';
+  $('mixedPartDescription').textContent=bass?(duet?'Upper estimated melody and low estimated bass foundation, assigned to separate bass players.':'Follow one estimated part with Jazz Bass samples. The other estimated part is explicitly omitted.'):electric?'Dry Electric samples follow the estimated melody and bass. This does not identify or recover the source guitar, and adds no amplifier or reverb.':'Acoustic guitar follows the accompaniment choice above.';
+  $('mixedSubmit').textContent=bass?'Make Jazz Bass preview':electric?'Make Electric preview':'Make acoustic preview';
   $('mixedBassOption').disabled=!bassAvailability.ready;
   $('mixedBassAvailability').textContent=bassAvailability.ready?'Experimental Jazz Bass is available. Fingering and sounding range use conservative assumptions; musical quality remains unverified.':bassAvailability.reason;
+  $('mixedElectricOption').disabled=!ELECTRIC_PREVIEW_ENABLED||electricAvailability.ready!==true;
+  $('mixedElectricAvailability').textContent=!ELECTRIC_PREVIEW_ENABLED?ELECTRIC_TESTING_REASON:electricAvailability.ready?'Experimental dry Electric is available. Estimated parts and musical fidelity still need review.':electricAvailability.reason;
 }
 $('mixedPerformers').onchange=updateAccompaniment;
 $('mixedInstrument').onchange=updateAccompaniment;
 async function loadBassAvailability(){
-  try{const status=await apiJSON('/api/status');bassAvailability={ready:status.bass_ready===true,reason:typeof status.bass_reason==='string'?status.bass_reason:'Experimental Jazz Bass is not ready on this laptop.'}}
-  catch{bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'}}
+  try{const status=await apiJSON('/api/status');bassAvailability={ready:status.bass_ready===true,reason:typeof status.bass_reason==='string'?status.bass_reason:'Experimental Jazz Bass is not ready on this laptop.'};electricAvailability={ready:status.electric_ready===true,reason:typeof status.electric_reason==='string'?status.electric_reason:'Experimental Electric is not ready on this laptop.'}}
+  catch{bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'};electricAvailability={ready:false,reason:'Connect to the laptop to check experimental Electric availability.'}}
   updateAccompaniment();
 }
 function restoreMixedSettings(request){
@@ -192,8 +207,10 @@ $('mixedForm').onsubmit=async event=>{
     if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');
     const instrument=$('mixedInstrument').value,performers=Number($('mixedPerformers').value);
     if(instrument==='jazz-bass'&&!bassAvailability.ready)throw Error(bassAvailability.reason);
-    const request=mixedPreviewRequest(mixedSource,Number($('mixedStart').value),Number($('mixedEnd').value),performers,{source_notes:$('mixedSourceNotes').value,arrangement_notes:$('mixedArrangementNotes').value,accompaniment:$('mixedAccompaniment').value},{instrument,bass_part:performers===2?'melody-and-bass':$('mixedBassPart').value});
-    const token=claimResult();$('mixedError').textContent='';$('mixedSubmit').disabled=true;activeJobKind='mixed';comparison.stop();$('diagnosticResult').replaceChildren();jobMessage(`Starting ${instrument==='jazz-bass'?'Jazz Bass':'acoustic'} preview…`);
+    if(instrument==='electric')requireElectricPreview();
+    const selection=instrument==='jazz-bass'?{instrument,bass_part:performers===2?'melody-and-bass':$('mixedBassPart').value}:{instrument};
+    const request=mixedPreviewRequest(mixedSource,Number($('mixedStart').value),Number($('mixedEnd').value),performers,{source_notes:$('mixedSourceNotes').value,arrangement_notes:$('mixedArrangementNotes').value,accompaniment:$('mixedAccompaniment').value},selection);
+    const token=claimResult();$('mixedError').textContent='';$('mixedSubmit').disabled=true;activeJobKind='mixed';comparison.stop();$('diagnosticResult').replaceChildren();jobMessage(`Starting ${instrument==='jazz-bass'?'Jazz Bass':instrument==='electric'?'dry Electric':'acoustic'} preview…`);
     await showJob(await apiJSON('/api/arrange-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)}),token);
   }catch(e){$('mixedError').textContent=e.message;$('mixedSubmit').disabled=false}
 };
@@ -203,11 +220,13 @@ $('mixedQueue').onclick=()=>{
   const selectedSource=mixedSource?{...mixedSource}:null;
   const chosen={start:Number($('mixedStart').value),end:Number($('mixedEnd').value),performers:Number($('mixedPerformers').value),source_notes:$('mixedSourceNotes').value,arrangement_notes:$('mixedArrangementNotes').value,accompaniment:$('mixedAccompaniment').value,instrument:$('mixedInstrument').value,bass_part:$('mixedBassPart').value};
   return action(()=>withProcessingLock(async()=>{
+  if(chosen.instrument==='electric')requireElectricPreview({online:false});
   const source=selectedSource;
   if(!source?.cached)throw Error('Download or import this original on this device before queuing it.');
   // The local source is verified below; this URL permits the existing form's
   // choice validation without pretending it has been received by the laptop.
-  const request=mixedPreviewRequest({...source,url:source.url||mediaPath(source.sha256)},chosen.start,chosen.end,chosen.performers,{source_notes:chosen.source_notes,arrangement_notes:chosen.arrangement_notes,accompaniment:chosen.accompaniment},{instrument:chosen.instrument,bass_part:chosen.performers===2?'melody-and-bass':chosen.bass_part});
+  const selection=chosen.instrument==='jazz-bass'?{instrument:chosen.instrument,bass_part:chosen.performers===2?'melody-and-bass':chosen.bass_part}:{instrument:chosen.instrument};
+  const request=mixedPreviewRequest({...source,url:source.url||mediaPath(source.sha256)},chosen.start,chosen.end,chosen.performers,{source_notes:chosen.source_notes,arrangement_notes:chosen.arrangement_notes,accompaniment:chosen.accompaniment},selection);
   await processingBytes({sha256:source.sha256,size:source.size});
   delete request.asset_id;
   const type=processingMime(source);if(!type)throw Error('Choose MP3, WAV, M4A/AAC, FLAC or WebM audio for this preview.');
@@ -274,9 +293,36 @@ async function processingBytes(source){
   if(bytes.byteLength!==source.size||await hash(bytes)!==source.sha256)throw Error('The queued original failed verification. Keep it for review.');
   return bytes;
 }
+function checkedElectricProcessingReceipt(receipt,expected){
+  const normalized=request=>{
+    const allowed=new Set(['asset_id','start_seconds','end_seconds','performers','instrument','guidance',
+      'kind','sha256','pipeline_version','runtime_version','renderer_version','electric_planner_version','electric_profile_version']);
+    if(!request||typeof request!=='object'||Array.isArray(request)||Object.keys(request).some(key=>!allowed.has(key)))throw Error('Invalid saved processing settings.');
+    if(previewSelection(request,request.performers).instrument!=='electric')throw Error('Different saved instrument.');
+    const guidance=request.guidance;
+    if(guidance!==undefined&&(!guidance||typeof guidance!=='object'||Array.isArray(guidance)||
+      Object.keys(guidance).some(key=>!['version','source_notes','arrangement_notes','accompaniment'].includes(key))||
+      (guidance.version!==undefined&&guidance.version!==1)))throw Error('Invalid saved preview notes.');
+    const notes=previewGuidance(guidance,request.performers);
+    if(notes.accompaniment!=='melody-and-bass')throw Error('Different saved accompaniment.');
+    return JSON.stringify([request.asset_id,request.start_seconds,request.end_seconds,request.performers,'electric',notes]);
+  };
+  try{if(normalized(receipt?.request)!==normalized(expected))throw Error('Different saved processing settings.')}
+  catch{const error=Error('The laptop operation names different audio or settings. It was not accepted or cancelled.');error.status=409;throw error}
+  return receipt;
+}
 const processingOutbox=new ProcessingOutbox({store:new IndexedProcessingStore(),getBytes:processingBytes,
   upload:processingUpload,
-  submit:value=>processingAPI('/api/processing-queue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)}),
+  submit:async value=>{
+    if(value.request?.instrument==='electric'&&!ELECTRIC_PREVIEW_ENABLED){
+      // Recover an uncertain earlier acceptance without creating gated work.
+      let receipt;
+      try{receipt=await processingAPI(`/api/processing-queue/${encodeURIComponent(value.operation_id)}`)}
+      catch(error){if(error?.status===404)throw Object.assign(Error(`${ELECTRIC_TESTING_REASON} An existing laptop receipt could not be recovered; no new request was sent.`),{status:404});throw error}
+      return checkedElectricProcessingReceipt(receipt,value.request);
+    }
+    return processingAPI('/api/processing-queue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});
+  },
   poll:id=>processingAPI(`/api/processing-queue/${encodeURIComponent(id)}`),
   cancel:id=>processingAPI(`/api/processing-queue/${encodeURIComponent(id)}/cancel`,{method:'POST'}),
   onChange:()=>drawProcessing()});
@@ -320,7 +366,7 @@ async function drawProcessing(){
   for(const row of rows){
     const li=document.createElement('li'),label=document.createElement('span');
     const states={local:'Saved on this device',waiting:'Waiting for the laptop; receipt not yet confirmed',accepted:{queued:'Received by laptop · queued',waiting:'Received by laptop · waiting for resources',running:'Processing on laptop'}[row.remote_state]||'Received by laptop','cancel-requested':'Cancellation pending on laptop',complete:'Ready on laptop',cancelled:'Cancelled',failed:'Processing failed',attention:'Needs attention'};
-    const request=row.request,choice=`${request.instrument==='jazz-bass'?'Jazz Bass':'Acoustic'} · ${request.performers} player${request.performers===1?'':'s'}${request.bass_part?' · '+request.bass_part.replaceAll('-',' '):''}`;
+    const request=row.request,choice=`${request.instrument==='jazz-bass'?'Jazz Bass':request.instrument==='electric'?'Dry Electric':'Acoustic'} · ${request.performers} player${request.performers===1?'':'s'}${request.bass_part?' · '+request.bass_part.replaceAll('-',' '):''}`;
     label.textContent=`${row.source.name} · ${request.start_seconds}–${request.end_seconds} seconds · ${choice} · ${states[row.status]||row.status}${row.reason?' · '+row.reason:''}`;li.append(label);
     if(request.guidance?.arrangement_notes){const note=document.createElement('p');note.className='muted';note.textContent=request.guidance.arrangement_notes;li.append(note)}
     if(row.status==='complete')li.append(button('Open preview',()=>{if(activeJob||refinementStarting)throw Error('Wait for the current preview or cancel it first.');return viewSavedJob(row.receipt.job_id)}));

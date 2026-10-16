@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { IndexedProcessingStore, ProcessingOutbox, transitionOperation, validateOperation } from './processing-outbox.mjs';
+import { mixedPreviewRequest } from './mixed-preview.mjs';
 
 const copy=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
 const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
@@ -35,10 +36,44 @@ await test('enqueue copies immutable source/settings and deduplicates one operat
   await assert.rejects(()=>r.box.enqueue(source,{...request,end_seconds:9}),/different/);assert.equal(r.calls.length,0);
 });
 await test('only supported mixed preview fields enter the outbox',async()=>{
-  const r=rig();for(const q of [{...request,asset_id:id(2)},{...request,kind:'mixed'},{...request,instrument:'electric'},
+  const r=rig();for(const q of [{...request,asset_id:id(2)},{...request,kind:'mixed'},{...request,instrument:'unsupported'},
     {...request,end_seconds:31},{...request,performers:3},{...request,start_seconds:NaN},{...request,bass_part:'bass-line'}])
     await assert.rejects(()=>r.box.enqueue(source,q));
   await r.box.enqueue(source,{...request,instrument:'jazz-bass',bass_part:'bass-line'});
+});
+await test('Electric queue rejects Bass roles and unsupported accompaniment without rewriting intent',async()=>{
+  const r=rig();
+  for(const performers of [1,2])for(const change of [{bass_part:'melody'},{bass_part:'bass-line'},{bass_part:'melody-and-bass'},
+    {guidance:{accompaniment:'melody-only'}},{guidance:{accompaniment:'unsupported'}},{guidance:{accompaniment:null}}])
+    await assert.rejects(()=>r.box.enqueue(source,{...request,performers,instrument:'electric',...change}));
+  assert.equal((await r.box.list()).length,0);assert.equal(r.calls.length,0);
+});
+await test('Electric solo and duo survive lost submission replies with exact source and settings',async()=>{
+  for(const performers of [1,2]){
+    const r=rig(),{asset_id,...q}=mixedPreviewRequest({id:source.track_id,url:'/local-only'},.25,2.25,performers,
+      {source_notes:'Arpeggiated electric, uncertain role',arrangement_notes:'Keep the rests'}, {instrument:'electric'});
+    const snapshot=copy(q);r.setSubmitLost();await r.box.enqueue(source,q);const initial=await r.store.get(id(1));
+    q.guidance.source_notes='Later text must not alter saved intent';await r.box.flush();
+    const waiting=await r.store.get(id(1));assert.equal(waiting.status,'waiting');assert.equal(waiting.remote_may_exist,true);
+    assert.equal(waiting.receipt,null);assert.equal(waiting.fingerprint,initial.fingerprint);
+    await new ProcessingOutbox(r.deps).flush();const accepted=await r.store.get(id(1));
+    assert.equal(accepted.status,'accepted');assert.deepEqual(accepted.source,source);assert.deepEqual(accepted.request,snapshot);
+    assert.equal(accepted.fingerprint,initial.fingerprint);assert.equal(accepted.request.bass_part,undefined);
+    assert.equal(r.remote.size,1);assert.equal(r.calls.filter(x=>x[0]==='upload').length,1);
+    assert.deepEqual(r.calls.filter(x=>x[0]==='submit').map(x=>[x[1],x[2]]),
+      [[id(1),{...snapshot,asset_id:id(2)}],[id(1),{...snapshot,asset_id:id(2)}]]);
+  }
+});
+await test('Electric attention retry preserves operation, receipt and immutable request',async()=>{
+  const r=rig(),q={...request,instrument:'electric',guidance:{version:1,source_notes:'Ringing notes',arrangement_notes:'Space',accompaniment:'melody-and-bass'}};
+  await r.box.enqueue(source,q);await r.box.flush();const accepted=await r.store.get(id(1));
+  const disconnected=new ProcessingOutbox({...r.deps,poll:async()=>{throw Object.assign(Error('Pair again'),{status:403})}});
+  await disconnected.flush();assert.equal((await r.store.get(id(1))).status,'attention');await r.box.retry(id(1));
+  await new ProcessingOutbox(r.deps).flush();const recovered=await r.store.get(id(1));
+  assert.equal(recovered.status,'accepted');assert.equal(recovered.operation_id,accepted.operation_id);
+  assert.equal(recovered.fingerprint,accepted.fingerprint);assert.deepEqual(recovered.receipt,accepted.receipt);
+  assert.deepEqual(recovered.request,q);assert.equal(r.calls.filter(x=>x[0]==='submit').length,1);
+  await assert.rejects(()=>r.box.enqueue(source,{...q,instrument:'acoustic'}),/different/);
 });
 await test('verified upload then idempotent submit saves immutable receipt',async()=>{
   const r=rig();await r.box.enqueue(source,request);await r.box.flush();const row=await r.store.get(id(1));

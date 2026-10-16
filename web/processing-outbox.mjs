@@ -26,11 +26,12 @@ function immutable(source,request){
   const {start_seconds:start,end_seconds:end,performers}=request;
   need(typeof start==='number'&&Number.isFinite(start)&&typeof end==='number'&&Number.isFinite(end)&&start>=0&&end>start&&end-start<=30,'Choose a passage up to 30 seconds.');
   need(Number.isInteger(performers)&&[1,2].includes(performers),'Choose one or two performers.');
-  need(request.instrument===undefined||['acoustic','jazz-bass'].includes(request.instrument),'This queue supports current acoustic/Jazz Bass mixed previews.');
+  need(request.instrument===undefined||['acoustic','jazz-bass','electric'].includes(request.instrument),'This queue supports acoustic, Electric and Jazz Bass mixed previews.');
   need(request.bass_part===undefined||['melody','bass-line','melody-and-bass'].includes(request.bass_part),'Unsupported bass part.');
-  if((request.instrument||'acoustic')==='acoustic')need(request.bass_part===undefined,'Bass role requires Jazz Bass.');
+  if((request.instrument||'acoustic')!=='jazz-bass')need(request.bass_part===undefined,'Bass role requires Jazz Bass.');
   else need((performers===2?['melody-and-bass']:['melody','bass-line']).includes(request.bass_part||(performers===2?'melody-and-bass':'melody')),'Bass role does not match the performer count.');
   need(request.guidance===undefined||record(request.guidance),'Expected guidance data.');
+  if(request.instrument==='electric')need(request.guidance?.accompaniment===undefined||request.guidance.accompaniment==='melody-and-bass','Electric previews use estimated melody and bass together.');
   need(new TextEncoder().encode(canonical(request)).byteLength<=4096,'Processing settings exceed the bounded request size.');
   return canonical({source,request});
 }

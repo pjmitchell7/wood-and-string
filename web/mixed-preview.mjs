@@ -19,8 +19,13 @@ export function previewGuidance(value={},performers=1){
 }
 export function previewSelection(value={},performers=1){
   const instrument=value.instrument??'acoustic';
-  if(!['acoustic','jazz-bass'].includes(instrument))throw Error('Choose acoustic guitar or experimental Jazz Bass.');
+  if(!['acoustic','jazz-bass','electric'].includes(instrument))throw Error('Choose acoustic guitar, experimental Electric guitar or Jazz Bass.');
   if(instrument==='acoustic')return {instrument};
+  if(instrument==='electric'){
+    if(![1,2].includes(performers))throw Error('Choose one or two Electric guitarists.');
+    if(value.bass_part!==undefined)throw Error('Bass part choices require Jazz Bass.');
+    return {instrument};
+  }
   const bass_part=value.bass_part??(performers===2?'melody-and-bass':'melody');
   if(!(performers===2?['melody-and-bass']:['melody','bass-line']).includes(bass_part))throw Error('Choose a bass part for the selected number of players.');
   return {instrument,bass_part};
@@ -29,6 +34,10 @@ export function previewChoice(request){
   const selected=previewSelection(request,request.performers);
   if(selected.instrument==='jazz-bass')return selected.bass_part==='melody-and-bass'?'Experimental Jazz Bass · two players: upper estimated melody and low bass foundation.':`Experimental Jazz Bass · one player following the estimated ${selected.bass_part==='melody'?'melody':'bass line'}.`;
   const guidance=previewGuidance(request.guidance,request.performers);
+  if(selected.instrument==='electric'){
+    if(guidance.accompaniment!=='melody-and-bass')throw Error('Electric previews use estimated melody and bass together.');
+    return request.performers===2?'Experimental dry Electric guitar · two players: upper estimated melody and low estimated bass foundation.':'Experimental dry Electric guitar · one player: estimated melody and bass together.';
+  }
   return guidance.accompaniment==='melody-only'?'Acoustic guitar · estimated melody only; bass omitted.':'Acoustic guitar · estimated melody with bass.';
 }
 export function mixedPreviewRequest(source, start, end, performers, notes={}, selection={}) {
@@ -38,8 +47,8 @@ export function mixedPreviewRequest(source, start, end, performers, notes={}, se
   if (![1, 2].includes(performers)) throw Error('Choose one or two guitarists.');
   const request={asset_id:source.id, start_seconds:start, end_seconds:end, performers};
   const selected=previewSelection(selection,performers);
-  if(selected.instrument==='jazz-bass')Object.assign(request,selected);
-  const guidance=previewGuidance(selected.instrument==='jazz-bass'?{...notes,accompaniment:'melody-and-bass'}:notes,performers);
+  if(selected.instrument!=='acoustic')Object.assign(request,selected);
+  const guidance=previewGuidance(selected.instrument!=='acoustic'?{...notes,accompaniment:'melody-and-bass'}:notes,performers);
   if(guidance.source_notes||guidance.arrangement_notes||guidance.accompaniment!=='melody-and-bass')request.guidance=guidance;
   return request;
 }

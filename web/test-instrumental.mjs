@@ -55,15 +55,32 @@ const failure=mountInstrumentalCandidates({job,root:new Node('root'),document,su
 failure.boxes[0].checked=true;failure.boxes[0].onchange();failure.consent.checked=true;await failure.save.onclick();
 assert.equal(failure.message.textContent,'<script>failure</script>');assert.deepEqual(failure.selected,['p1']);assert.equal(failure.consent.checked,true);
 
+for(const [enabled,availability]of [[false,{ready:true}],[true,{}],[true,{ready:false,reason:'Electric unavailable'}]]){
+  let submitted=0;const controls=mountInstrumentalCandidates({job,root:new Node('root'),document,
+    electricEnabled:enabled,electricAvailability:()=>availability,submit:async()=>submitted++});
+  controls.boxes[0].checked=true;controls.boxes[0].onchange();controls.consent.checked=true;
+  controls.instrument.value='electric';await controls.save.onclick();assert.equal(submitted,0);
+  assert.equal(controls.instrument.children.find(n=>n.value==='electric').disabled,true);
+  assert.match(controls.message.textContent,enabled?/not available|unavailable/:/still being tested/);
+}
+let electricRequest;
+const electricControls=mountInstrumentalCandidates({job,root:new Node('root'),document,electricEnabled:true,
+  electricAvailability:()=>({ready:true}),submit:async request=>{electricRequest=request}});
+electricControls.boxes[0].checked=true;electricControls.boxes[0].onchange();electricControls.consent.checked=true;
+electricControls.instrument.value='electric';await electricControls.save.onclick();
+assert.deepEqual(electricRequest,{parent_job_id:'parent',interpretation:'published',note_ids:['p1'],instrument:'electric',accept_as_lead:true});
+assert.equal(electricRequest.bass_part,undefined);assert.equal(electricControls.instrument.children.find(n=>n.value==='electric').disabled,false);
+
 // Execute actual app candidate completion/callback ownership without media.
 const app=decoder.decode(fs.readFileSync(new URL('./app.js',import.meta.url)));
 const code=app.slice(app.indexOf('let resultGeneration='),app.indexOf("$('cancelDiagnostic').onclick"));
 const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,new Node(id));return nodes.get(id)};
 const stored=new Map();let callbacks,apiResolve,refreshes=0,stops=0;
 const c={$ ,activeJob:null,activeJobKind:null,pollTimer:null,tracks:[track],bassAvailability:{ready:false},
+  ELECTRIC_PREVIEW_ENABLED:false,electricAvailability:{ready:false},
   localStorage:{setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
   jobMessage:text=>$('message').textContent=text,button:(text,fn)=>Object.assign(new Node('button'),{textContent:text,onclick:fn}),
-  mountInstrumentalCandidates:options=>{callbacks=options},instrumentalPassage,instrumentalChanges,document,
+  mountInstrumentalCandidates:options=>{callbacks=options},instrumentalPassage,instrumentalChanges,document,mountSoundDiagnostics(){},
   action:fn=>fn(),refresh:async()=>{refreshes++},comparison:{stop:()=>stops++,start:()=>{throw Error('Unexpected playback')}},
   setTimeout:()=>1,clearTimeout(){},apiJSON:()=>new Promise(r=>apiResolve=r),
   mixedCandidateSummary:()=>'',describeAdaptation:()=>'',play:()=>{throw Error('Unexpected playback')}};

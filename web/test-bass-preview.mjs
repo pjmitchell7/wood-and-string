@@ -20,7 +20,7 @@ for(const part of ['melody','bass-line']){
 const duo=mixedPreviewRequest(original,1,6,2,{}, {instrument:'jazz-bass'});
 assert.equal(duo.bass_part,'melody-and-bass');assert.equal(duo.guidance,undefined);
 assert.match(previewChoice(duo),/upper estimated melody and low bass foundation/);
-for(const [selection,players] of [[{instrument:'electric'},1],[{instrument:'jazz-bass',bass_part:'bass-line'},2],[{instrument:'jazz-bass',bass_part:'melody-and-bass'},1]])
+for(const [selection,players] of [[{instrument:'unsupported'},1],[{instrument:'jazz-bass',bass_part:'bass-line'},2],[{instrument:'jazz-bass',bass_part:'melody-and-bass'},1]])
   assert.throws(()=>previewSelection(selection,players));
 
 // Exercise actual UI functions without an audio element or a browser.
@@ -30,6 +30,7 @@ const fields=new Map();
 const $=id=>{if(!fields.has(id))fields.set(id,{value:id==='mixedInstrument'?'acoustic':id==='mixedPerformers'?'1':'',options:[{},{}],scrollIntoView(){},focus(){}});return fields.get(id)};
 let calls=0,response={bass_ready:true,bass_reason:''};
 const scope={$ ,mixedSource:null,tracks:[original],previewGuidance,previewSelection,previewChoice,
+  ELECTRIC_PREVIEW_ENABLED:false,ELECTRIC_TESTING_REASON:'Electric is still being tested.',electricAvailability:{ready:false},
   bassAvailability:{ready:false,reason:'Not ready'},apiJSON:async url=>{assert.equal(url,'/api/status');calls++;return response},
   document:{createElement:()=>({textContent:''})}};
 vm.createContext(scope);vm.runInContext(source,scope);

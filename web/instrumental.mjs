@@ -54,7 +54,7 @@ export function instrumentalPassage(job,tracks){
   return {track,start:request.start_seconds,end:request.end_seconds,label:`Original passage (cue may be approximate) · ${track.name} · ${request.start_seconds.toFixed(2)}–${request.end_seconds.toFixed(2)} seconds`};
 }
 
-export function mountInstrumentalCandidates({job,root,submit,document:doc=globalThis.document,bassAvailability=()=>({ready:false}),isCurrent=()=>true}){
+export function mountInstrumentalCandidates({job,root,submit,document:doc=globalThis.document,bassAvailability=()=>({ready:false}),electricAvailability=()=>({ready:false}),electricEnabled=false,isCurrent=()=>true}){
   const bundle=candidateBundle(job),selected=new Set();let busy=false,page=0;
   const pageSize=100;
   const node=(tag,text)=>{const n=doc.createElement(tag);if(text!==undefined)n.textContent=text;return n};
@@ -70,10 +70,12 @@ export function mountInstrumentalCandidates({job,root,submit,document:doc=global
   const choiceLabel=node('label','Render selected notes with'),instrument=node('select');
   const acoustic=node('option','One acoustic guitar');acoustic.value='acoustic';
   const bass=node('option','One Jazz Bass · experimental');bass.value='jazz-bass';bass.disabled=!bassAvailability().ready;
-  instrument.append(acoustic,bass);instrument.value='acoustic';choiceLabel.append(instrument);panel.append(choiceLabel);
+  const electric=node('option','One dry Electric guitar · experimental');electric.value='electric';electric.disabled=electricEnabled!==true||electricAvailability().ready!==true;
+  instrument.append(acoustic,bass,electric);instrument.value='acoustic';choiceLabel.append(instrument);panel.append(choiceLabel);
   const consentLabel=node('label'),consent=node('input');consent.type='checkbox';consent.checked=false;
   consentLabel.append(consent,node('span','I choose these notes as the lead/melody part for this arrangement. This is my interpretation, not a detected source role.'));panel.append(consentLabel);
-  panel.append(node('p','Only checked notes from this interpretation will be proposed for one player. Other candidates remain saved evidence. Physical planning may still transpose or omit selected notes; review those changes. Electric instruments, drums and automatic style interpretation are unavailable.'));
+  panel.append(node('p','Only checked notes from this interpretation will be proposed for one player. Other candidates remain saved evidence. Physical planning may still transpose or omit selected notes; review those changes. Electric uses dry samples without amplifier or reverb. Drums and automatic style interpretation are unavailable.'));
+  if(electricEnabled!==true)panel.append(node('p','Experimental Electric previews are still being tested. Saved Electric previews remain available.'));
   const message=node('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
   const save=node('button','Preview selected notes');save.type='button';
   let boxes=[];
@@ -103,7 +105,11 @@ export function mountInstrumentalCandidates({job,root,submit,document:doc=global
     try{
       if(!selected.size||!consent.checked)throw Error('Select notes and explicitly accept their lead role first.');
       if(instrument.value==='jazz-bass'&&!bassAvailability().ready)throw Error(bassAvailability().reason||'Jazz Bass is not available.');
-      if(!['acoustic','jazz-bass'].includes(instrument.value))throw Error('Choose a supported instrument.');
+      if(instrument.value==='electric'){
+        if(electricEnabled!==true)throw Error('Experimental Electric previews are still being tested.');
+        if(electricAvailability().ready!==true)throw Error(electricAvailability().reason||'Electric is not available on this laptop.');
+      }
+      if(!['acoustic','jazz-bass','electric'].includes(instrument.value))throw Error('Choose a supported instrument.');
       busy=true;state();message.textContent='Saving your selected interpretation…';
       await submit({parent_job_id:job.id,interpretation:policy.value,note_ids:[...selected].sort(),instrument:instrument.value,accept_as_lead:true});
     }catch(error){if(isCurrent())message.textContent=error.message}

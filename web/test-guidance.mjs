@@ -14,8 +14,8 @@ for(const bad of [{source_notes:'x'.repeat(257)},{source_notes:[]},{source_notes
 // Execute actual settings restoration without browser/audio or fabricated parsing.
 const app=fs.readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const code=app.slice(app.indexOf('function selectMixed('),app.indexOf("$('mixedClose').onclick"));
-const fields=Object.fromEntries(['mixedSourceNotes','mixedArrangementNotes','mixedAccompaniment','mixedPerformers','mixedPanel','mixedSource','mixedError','mixedStart','mixedEnd','mixedInstrument','mixedBassPart','mixedAccompanimentLabel','mixedBassPartLabel','mixedPartDescription','mixedSubmit','mixedBassOption','mixedBassAvailability'].map(id=>[id,{value:id==='mixedPerformers'?'1':id==='mixedInstrument'?'acoustic':'',options:[{},{}],scrollIntoView(){},focus(){}}]));
-const scope={mixedSource:null,tracks:[source],$:id=>fields[id],previewGuidance,previewSelection,previewChoice,bassAvailability:{ready:true}};vm.createContext(scope);vm.runInContext(code,scope);
+const fields=Object.fromEntries(['mixedSourceNotes','mixedArrangementNotes','mixedAccompaniment','mixedPerformers','mixedPanel','mixedSource','mixedError','mixedStart','mixedEnd','mixedInstrument','mixedBassPart','mixedAccompanimentLabel','mixedBassPartLabel','mixedPartDescription','mixedSubmit','mixedBassOption','mixedBassAvailability','mixedElectricOption','mixedElectricAvailability'].map(id=>[id,{value:id==='mixedPerformers'?'1':id==='mixedInstrument'?'acoustic':'',options:[{},{}],scrollIntoView(){},focus(){}}]));
+const scope={mixedSource:null,tracks:[source],$:id=>fields[id],previewGuidance,previewSelection,previewChoice,bassAvailability:{ready:true},ELECTRIC_PREVIEW_ENABLED:false,ELECTRIC_TESTING_REASON:'Electric is still being tested.',electricAvailability:{ready:false}};vm.createContext(scope);vm.runInContext(code,scope);
 scope.restoreMixedSettings(request);
 assert.equal(scope.mixedSource.id,source.id);assert.equal(fields.mixedStart.value,2);assert.equal(fields.mixedEnd.value,7);
 assert.equal(fields.mixedSourceNotes.value,'café');assert.equal(fields.mixedArrangementNotes.value,guidance.arrangement_notes);

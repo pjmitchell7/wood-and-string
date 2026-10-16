@@ -30,6 +30,11 @@ const bassMelody=structuredClone(bassLine);bassMelody.request.bass_part='melody'
 draft=refinementDraft(bassMelody);draft.add('omit',['a','b','c']);assert.throws(()=>draft.request(),/estimated melody/);
 const bassDuo=structuredClone(bassLine);bassDuo.request.performers=2;bassDuo.request.bass_part='melody-and-bass';
 draft=refinementDraft(bassDuo);draft.add('omit',['d']);assert.throws(()=>draft.request(),/both melody and bass/);
+const electric=structuredClone(job);electric.request.instrument='electric';
+draft=refinementDraft(electric);draft.add('omit',['a','b','c']);assert.throws(()=>draft.request(),/estimated melody/);
+draft=refinementDraft(electric);draft.add('omit',['d']);assert.equal(draft.request().operations.length,1);
+const electricDuo=structuredClone(electric);electricDuo.request.performers=2;
+draft=refinementDraft(electricDuo);draft.add('omit',['d']);assert.throws(()=>draft.request(),/both melody and bass/);
 const refined=structuredClone(job);refined.request.kind='refine';refined.result.arrangement.refinement_source={sample_rate:100,notes:[note('joined',100)]};
 assert.equal(editablePerformance(refined).notes[0].id,'joined');assert.equal(refined.result.arrangement.source.notes.length,4);
 assert.equal(originalPassage(refined,[{id:'song',variant:'original',sha256:'hash',name:'Song'}]).start,1);
@@ -43,6 +48,10 @@ const all=node=>[node,...node.children.flatMap(all)];
 const bassRoot=new Node('root');mountRefinement({job:bassLine,root:bassRoot,document,submit:()=>{throw Error('Unexpected submit')}});
 assert.ok(all(bassRoot).some(n=>n.textContent.includes('fitted to the Jazz Bass players again')));
 assert.ok(all(bassRoot).some(n=>n.textContent.includes('follow the estimated bass line. The other part remains visible')));
+const electricRoot=new Node('root');mountRefinement({job:electric,root:electricRoot,document,submit:()=>{throw Error('Unexpected submit')}});
+assert.ok(all(electricRoot).some(n=>n.textContent.includes('fitted to the Electric guitar players again')));
+assert.ok(all(electricRoot).some(n=>n.textContent.includes('dry Electric samples, with no added amplifier, reverb or sustain')));
+assert.ok(!all(electricRoot).some(n=>n.textContent.includes('acoustic guitar players')));
 const button=text=>all(root).find(n=>n.tag==='button'&&n.textContent===text);
 let boxes=all(root).filter(n=>n.tag==='input');
 for(const box of boxes.slice(0,2)){box.checked=true;box.onchange()}

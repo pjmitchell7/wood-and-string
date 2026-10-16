@@ -68,6 +68,18 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(self.client.post('/api/processing-queue/'+identity+'/extra',json={}).status_code,404)
         self.assertEqual(self.client.get('/processing-outbox.mjs?v=23').status_code,200)
 
+    def test_v24_electric_and_diagnostics_shell_keeps_static_pairing_boundary(self):
+        paths=('/app.js?v=24','/mixed-preview.mjs?v=24','/instrumental.mjs?v=24',
+               '/processing-outbox.mjs?v=24','/sound-diagnostics.mjs?v=24')
+        for path in paths:self.assertEqual(self.client.get(path).status_code,401)
+        device=self.pair()
+        for path in paths:self.assertEqual(self.client.get(path).status_code,200,path)
+        self.assertEqual(self.forwarded,[],'Static shell files must not become authority requests')
+        self.assertEqual(self.client.get('/render-evidence/private.dry.f32').status_code,404)
+        self.assertEqual(self.client.get('/sound-diagnostics.mjs/extra').status_code,404)
+        self.app.state.pairing.revoke_local(device)
+        self.assertEqual(self.client.get('/sound-diagnostics.mjs?v=24').status_code,401)
+
     def test_instrumental_selection_body_cap_supports_long_ids_without_unbounding_other_routes(self):
         self.pair();large=b'x'*(256*1024)
         self.assertEqual(self.client.post('/api/arrange-instrumental',content=large).status_code,200)

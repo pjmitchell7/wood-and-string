@@ -148,7 +148,7 @@ def checked_candidates(library,job):
     AnalysisEvidence(library).verify(reference)
     return bundle,source
 
-def prepare_arrangement(library,value):
+def prepare_arrangement(library,value,*,frozen=None):
     if (type(value) is not dict or set(value)-{'parent_job_id','interpretation','note_ids','instrument','accept_as_lead','electric_tone'}
         or not {'parent_job_id','interpretation','note_ids','instrument','accept_as_lead'}<=set(value)
         or value['accept_as_lead'] is not True):
@@ -173,6 +173,8 @@ def prepare_arrangement(library,value):
               interpretation=interpretation,note_ids=sorted(ids),accept_as_lead=True,
               role_assignment='user-selected-lead',review_version=VERSION,
               renderer_version=renderer_version(selection),**selection)
+    from acoustic_companion import request_fields
+    spec.update(request_fields(selection,frozen=frozen))
     return dict(spec=spec,parent=parent,bundle=bundle,source=source,selection=selection)
 
 def arrange_review(prepared):

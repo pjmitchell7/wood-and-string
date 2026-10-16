@@ -12,7 +12,7 @@ There’s also a processing queue: save a short preview request on a device, sen
 
 I want three ways to arrange a song: Keep it close, Essentials and Reimagine. Essentials would keep the riff or melody I came to hear and leave the extra layers out. A synth or vocal might carry that hook in the original; translating it to guitar shouldn’t mean pretending it was a guitar all along. These choices are still being developed.
 
-I’m also working on separate playable parts. Muting one guitarist in a duet leaves a duet with a muted part; making a complete solo version takes different musical decisions. There’s now code for capturing aligned guitar parts, playing them on one clock and saving a mix. It passes silent software checks, but still needs native audio testing and connection to the player interface.
+I’m also working on separate playable parts. Muting one guitarist in a duet leaves a duet with a muted part; making a complete solo version takes different musical decisions. Capturing the same sampled-guitar notes as separate parts kept the combined preview unchanged in a real rendering check. The app source now saves those parts and connects explicit Load, Play, mute and seek controls. Silent checks pass; fresh production worker, browser and real-device playback checks are still ahead.
 
 ## How I’m putting it together
 

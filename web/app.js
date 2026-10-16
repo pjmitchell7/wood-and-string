@@ -7,6 +7,7 @@ import { instrumentalRequest, instrumentalPassage, instrumentalChanges, mountIns
 import { ProcessingOutbox, IndexedProcessingStore } from './processing-outbox.mjs?v=24';
 import { mountSoundDiagnostics } from './sound-diagnostics.mjs?v=24';
 import {electricTonePreset,electricToneForPreset,electricToneLabel,electricToneDescription} from './electric-tone.mjs?v=25';
+import {mountAcousticParts,VERSION as ACOUSTIC_PARTS_VERSION} from './acoustic-parts.mjs?v=27';
 
 const $ = id => document.getElementById(id);
 
@@ -15,13 +16,16 @@ const MEDIA = 'wood-media-v1';
 
 let tracks = [], queue = [], current = -1, objectUrl, context, source, eq, sleepTimer;
 let transport, playGeneration=0, queueSignature="";
-function pausePlayback(){playGeneration++;audio.pause();transport?.pause()}
+let acousticParts,acousticPartsCapability;
+function disposeAcousticParts(){acousticParts?.dispose();acousticParts=null}
+function releaseAcousticParts(){acousticParts?.unload()}
+function pausePlayback(){playGeneration++;audio.pause();transport?.pause();acousticParts?.pause()}
 
 const status = text => $('status').textContent = text;
 const compareAudio=document.createElement('audio');compareAudio.preload='metadata';
-const comparison=passagePlayer({audio:compareAudio,load:verifiedComparisonMedia,pauseMain:()=>pausePlayback()});
+const comparison=passagePlayer({audio:compareAudio,load:verifiedComparisonMedia,pauseMain:()=>{releaseAcousticParts();pausePlayback()}});
 
-window.addEventListener('pagehide',()=>{comparison.stop();transport?.stop()});
+window.addEventListener('pagehide',()=>{disposeAcousticParts();comparison.stop();transport?.stop()});
 async function verifiedBytes(track){
   let response;
   if(track.cached)response=await(await caches.open(MEDIA)).match(mediaPath(track.sha256));
@@ -62,7 +66,7 @@ async function apiJSON(url,options){await session(options?.signal);const respons
 
 let resultGeneration=0;
 let refinementStarting=false;
-function claimResult(){return ++resultGeneration}
+function claimResult({keepParts=false}={}){if(keepParts)releaseAcousticParts();else disposeAcousticParts();return ++resultGeneration}
 async function viewSavedJob(id){const token=claimResult();const job=await apiJSON(`/api/jobs/${encodeURIComponent(id)}`);if(token===resultGeneration)await showJob(job,token)}
 async function showJob(job,token=claimResult()){
   if(token!==resultGeneration)return;
@@ -105,7 +109,7 @@ async function showJob(job,token=claimResult()){
       if(accepted){const receipt=document.createElement('p');receipt.textContent=`Your selected instrumental candidates were assigned as a lead part for one ${previewInstrument}. This is your arrangement interpretation; the source instrument remains unknown.`;root.append(receipt,button('Return to candidate review',async()=>{if(activeJob||refinementStarting)throw Error('Wait for the current job first.');comparison.stop();await viewSavedJob(job.request.parent_job_id)}))}
       comparison.stop();
       try{const passage=accepted?instrumentalPassage(job,tracks):originalPassage(job,tracks),label=document.createElement('p');label.textContent=passage.label;
-        root.append(label,button('Compare original passage',()=>{if(refinementStarting)return;claimResult();return comparison.start(passage)}),button('Stop comparison',()=>{if(!refinementStarting)claimResult();comparison.stop()}));
+        root.append(label,button('Compare original passage',()=>{if(refinementStarting)return;claimResult({keepParts:true});return comparison.start(passage)}),button('Stop comparison',()=>{if(!refinementStarting)claimResult({keepParts:true});comparison.stop()}));
       }catch(error){const unavailable=document.createElement('p');unavailable.textContent=error.message;root.append(unavailable)}
     }
     if(mixed){
@@ -126,6 +130,13 @@ async function showJob(job,token=claimResult()){
     if(warnings.length){const details=document.createElement('details'),title=document.createElement('summary'),list=document.createElement('ul');title.textContent=`Analysis limits (${warnings.length})`;for(const warning of warnings){const li=document.createElement('li');li.textContent=warning;list.append(li)}details.append(title,list);root.append(details)}
     const notes=job.result.arrangement?.adaptations||[],summary=document.createElement('p');summary.className='muted';summary.textContent=accepted?instrumentalChanges(job.result.arrangement):notes.length?`Arrangement changes: ${notes.map(describeAdaptation).join('; ')}`:'No note adaptations reported for this preview.';root.append(summary);
     mountSoundDiagnostics({job,root,document});
+    if(job.result.acoustic_companion?.status==='available'){
+      if(acousticPartsCapability!==ACOUSTIC_PARTS_VERSION)await loadBassAvailability();
+      if(token!==resultGeneration)return;
+      disposeAcousticParts();
+      acousticParts=mountAcousticParts({job,root,capability:acousticPartsCapability,session,
+        beforePlay:()=>{comparison.stop();playGeneration++;audio.pause();transport?.pause()}});
+    }
   }
 }
 async function pollJob(){const token=resultGeneration;try{await showJob(await apiJSON(`/api/jobs/${encodeURIComponent(activeJob)}`),token)}catch(e){if(token!==resultGeneration)return;jobMessage(`${e.message} Reopen the app to check this preview.`);$('diagnostic').disabled=false;$('extractSubmit').disabled=false;$('mixedSubmit').disabled=false;$('instrumentalSubmit').disabled=false;$('cancelDiagnostic').hidden=true}}
@@ -159,8 +170,8 @@ $('mixedPerformers').onchange=updateAccompaniment;
 $('mixedInstrument').onchange=updateAccompaniment;
 $('mixedElectricTone').onchange=updateAccompaniment;
 async function loadBassAvailability(){
-  try{const status=await apiJSON('/api/status');bassAvailability={ready:status.bass_ready===true,reason:typeof status.bass_reason==='string'?status.bass_reason:'Experimental Jazz Bass is not ready on this laptop.'};electricAvailability={ready:status.electric_ready===true,reason:typeof status.electric_reason==='string'?status.electric_reason:'Experimental Electric is not ready on this laptop.'}}
-  catch{bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'};electricAvailability={ready:false,reason:'Connect to the laptop to check experimental Electric availability.'}}
+  try{const status=await apiJSON('/api/status');acousticPartsCapability=status.acoustic_companion_version;bassAvailability={ready:status.bass_ready===true,reason:typeof status.bass_reason==='string'?status.bass_reason:'Experimental Jazz Bass is not ready on this laptop.'};electricAvailability={ready:status.electric_ready===true,reason:typeof status.electric_reason==='string'?status.electric_reason:'Experimental Electric is not ready on this laptop.'}}
+  catch{acousticPartsCapability=undefined;bassAvailability={ready:false,reason:'Connect to the laptop to check experimental Jazz Bass availability.'};electricAvailability={ready:false,reason:'Connect to the laptop to check experimental Electric availability.'}}
   updateAccompaniment();
 }
 function restoreMixedSettings(request){
@@ -439,7 +450,7 @@ async function useNativeEngine(){
   $('engine').value='native';await configureEngine();
 }
 async function play(index){
-  comparison.stop();if(index<0||index>=queue.length)return;
+  releaseAcousticParts();comparison.stop();if(index<0||index>=queue.length)return;
   const entry=entryAt(index);if(!entry)throw Error('Track unavailable.');
   const token=++playGeneration;transport?.stop();audio.pause();
   queueSignature=JSON.stringify(queue);
@@ -469,21 +480,21 @@ async function next(){if(!queue.length)return;let nextIndex=$('shuffle').checked
 
 function bindAudioEvents(){
   const ownedAudio=audio;
-  audio.addEventListener('play',()=>{if(audio!==ownedAudio)return;comparison.stop();transport?.pause()});
-  audio.addEventListener('seeking',()=>{if(audio===ownedAudio)comparison.stop()});
+  audio.addEventListener('play',()=>{if(audio!==ownedAudio)return;releaseAcousticParts();comparison.stop();transport?.pause()});
+  audio.addEventListener('seeking',()=>{if(audio===ownedAudio){releaseAcousticParts();comparison.stop()}});
   audio.onended=()=>{if(audio!==ownedAudio||$('engine').value==='scheduled')return;if($('repeat').value==='one'){audio.currentTime=0;audio.play().catch(e=>status(e.message))}else next().catch(e=>status(e.message))};
   audio.onerror=()=>{if(audio===ownedAudio)status('This file could not be played. Its audio format may not be supported by this device.')};
 }
 bindAudioEvents();
 
 $('engine').onchange=()=>{pausePlayback();transport?.stop();const token=playGeneration;engineWithFallback({configure:configureEngine,useNative:useNativeEngine,isCurrent:()=>token===playGeneration,onIssue:status}).catch(e=>status(e.message))};
-$('transportToggle').onclick=()=>{comparison.stop();if(transport?.pending){pausePlayback();$('transportToggle').textContent='Resume';return}if(!transport?.entry){if(queue.length)play(current<0?0:current).catch(e=>status(e.message));return}if(transport.paused)transport.resume().catch(e=>status(e.message));else transport.pause()};
-$('transportSeek').onchange=()=>{comparison.stop();transport?.seek(Number($('transportSeek').value)).catch(e=>status(e.message))};
+$('transportToggle').onclick=()=>{releaseAcousticParts();comparison.stop();if(transport?.pending){pausePlayback();$('transportToggle').textContent='Resume';return}if(!transport?.entry){if(queue.length)play(current<0?0:current).catch(e=>status(e.message));return}if(transport.paused)transport.resume().catch(e=>status(e.message));else transport.pause()};
+$('transportSeek').onchange=()=>{releaseAcousticParts();comparison.stop();transport?.seek(Number($('transportSeek').value)).catch(e=>status(e.message))};
 $('transportVolume').oninput=()=>transport?.setVolume(Number($('transportVolume').value));
 $('crossfade').onchange=()=>transport?.setFade(Number($('crossfade').value));
 $('shuffle').onchange=$('repeat').onchange=()=>transport?.queueChanged();$('bass').oninput=()=>{if(eq&&['web','scheduled'].includes($('engine').value))eq.gain.value=Number($('bass').value)};
 
-$('sleep').onchange=()=>{clearTimeout(sleepTimer);const minutes=Number($('sleep').value);if(minutes>0)sleepTimer=setTimeout(()=>{comparison.stop();pausePlayback()},minutes*60000)};
+$('sleep').onchange=()=>{clearTimeout(sleepTimer);const minutes=Number($('sleep').value);if(minutes>0)sleepTimer=setTimeout(()=>{releaseAcousticParts();comparison.stop();pausePlayback()},minutes*60000)};
 
 $('performers').value=localStorage.getItem('performers')||'1';$('performers').onchange=()=>localStorage.setItem('performers',$('performers').value);
 
@@ -507,7 +518,7 @@ $('restore').onchange=async event=>{
 
     if(file.size>145*1048576)throw Error('Export is too large for this preview.');
 
-    restoreBusy=true;document.body.inert=true;status('Checking every track before restore…');
+    releaseAcousticParts();comparison.stop();pausePlayback();restoreBusy=true;document.body.inert=true;status('Checking every track before restore…');
 
     const plan=await preflightRestore(JSON.parse(await file.text()),tracks,Number($('budget').value)*1048576);
 
@@ -569,7 +580,7 @@ $('restore').onchange=async event=>{
 
 };
 
-if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{comparison.stop();return $('engine').value==='scheduled'?transport?.resume():audio.play()},pause:pausePlayback,previoustrack:()=>play(current-1),nexttrack:next,seekto:d=>{if(Number.isFinite(d.seekTime)){comparison.stop();if($('engine').value==='scheduled')transport?.seek(d.seekTime);else audio.currentTime=d.seekTime}}})){try{navigator.mediaSession.setActionHandler(action,handler)}catch{}}}
+if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{releaseAcousticParts();comparison.stop();return $('engine').value==='scheduled'?transport?.resume():audio.play()},pause:pausePlayback,previoustrack:()=>play(current-1),nexttrack:next,seekto:d=>{if(Number.isFinite(d.seekTime)){releaseAcousticParts();comparison.stop();if($('engine').value==='scheduled')transport?.seek(d.seekTime);else audio.currentTime=d.seekTime}}})){try{navigator.mediaSession.setActionHandler(action,handler)}catch{}}}
 
 tracks=await all();try{queue=((await loadQueue())||JSON.parse(localStorage.getItem('queue')||'[]')).filter(id=>tracks.some(t=>t.id===id))}catch{queue=[]}const cache=await caches.open(MEDIA);for(const t of tracks){if(t.cached&&!await cache.match(mediaPath(t.sha256))){t.cached=false;await put(t)}}draw();await storage();status('Ready. Import music to listen locally.');
 await drawProcessing().catch(error=>{$('processingStatus').textContent=error.message});
@@ -589,6 +600,6 @@ else {restoreSavedPreview({savedId:localStorage.getItem('latestPreviewJob'),load
 
 
 
-mountCapture({saveFile:file=>action(()=>importFile(file)),checkBudget:()=>checkStorageBudget(8*1048576),pausePlayback:()=>{comparison.stop();pausePlayback()},isBusy:()=>restoreBusy||pendingActions>0});
+mountCapture({saveFile:file=>action(()=>importFile(file)),checkBudget:()=>checkStorageBudget(8*1048576),pausePlayback:()=>{releaseAcousticParts();comparison.stop();pausePlayback()},isBusy:()=>restoreBusy||pendingActions>0});
 
 if(location.protocol==='https:')$('connectionHelp').hidden=false;

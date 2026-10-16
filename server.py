@@ -1,7 +1,7 @@
 """Loopback development authority. LAN pairing is not enabled by this server."""
 import asyncio
 from functools import wraps
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, ExitStack
 import json
 import hashlib
 import math
@@ -16,7 +16,7 @@ from urllib.parse import unquote
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from library import Library, MAX_IMPORT
 from pairing import Pairing
@@ -29,6 +29,31 @@ from audio.mixed_analysis import PIPELINE_VERSION as MIXED_PIPELINE_VERSION, INP
 
 ROOT = Path(__file__).parent
 MIMES = {'.mp3':'audio/mpeg', '.wav':'audio/wav', '.m4a':'audio/mp4', '.aac':'audio/aac', '.flac':'audio/flac', '.webm':'audio/webm'}
+PART_FILES = frozenset(('performer-1.wav', 'performer-2.wav', 'combined.wav'))
+
+
+class _ProtectedPartsResponse(StreamingResponse):
+    """Keep a verified companion's readers through ASGI completion/disconnect."""
+    def __init__(self, stream, *, size, sha256, owner):
+        self._parts_owner = owner
+        def chunks():
+            remaining = size
+            stream.seek(0)
+            while remaining:
+                data = stream.read(min(65536, remaining))
+                if not data:
+                    raise OSError('Verified guitar part ended unexpectedly')
+                remaining -= len(data)
+                yield data
+        super().__init__(chunks(), media_type='audio/wav', headers={
+            'Content-Length': str(size), 'X-Content-SHA256': sha256,
+            'Cache-Control': 'no-store', 'Accept-Ranges': 'none'})
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self._parts_owner.close()
 
 def mixed_runtime_status():
     try:
@@ -151,8 +176,10 @@ def create_app(root=None):
                     from instrumental_preview import checked_candidates
                     checked_candidates(library,result);valid=True
                 else:
-                    asset=library.get(result['result']['asset']['id'])
-                    valid=library.verify(asset['id'])
+                    saved_asset=result['result']['asset']
+                    asset=library.get(saved_asset['id'])
+                    valid=(asset['sha256']==saved_asset.get('sha256',asset['sha256'])
+                           and library.verify(asset['id']))
                     if valid and result['request'].get('instrument')=='electric':
                         from tone_evidence import verify_preview
                         from audio.preview_instruments import validate_saved_selection
@@ -191,6 +218,7 @@ def create_app(root=None):
 
     @app.get('/api/status')
     def status():
+        from acoustic_companion import VERSION as ACOUSTIC_COMPANION_VERSION
         runtime=mixed_runtime_status()
         bass=bass_runtime_status()
         electric=electric_runtime_status()
@@ -201,7 +229,8 @@ def create_app(root=None):
                     bass_ready=bool(bass.get('ready')), bass_reason=bass.get('reason'),
                     electric_ready=bool(electric.get('ready')), electric_reason=electric.get('reason'),
                     render_evidence_attention=render_cleanup_attention,
-                    instrumental_ready=bool(instrumental.get('ready')), instrumental_reason=instrumental.get('reason'))
+                    instrumental_ready=bool(instrumental.get('ready')), instrumental_reason=instrumental.get('reason'),
+                    acoustic_companion_version=ACOUSTIC_COMPANION_VERSION, acoustic_companion_supported=True)
 
     async def admit_instrumental(spec,space):
         # Never replace a saved candidate parent after failed verification.
@@ -354,6 +383,61 @@ def create_app(root=None):
             return result
         except KeyError: raise HTTPException(404,'Preview not found')
 
+    def parts_job(identity):
+        try:
+            if str(uuid.UUID(identity)) != identity:
+                raise ValueError('Invalid preview identity')
+            result = library.job(identity)
+        except (KeyError, ValueError, AttributeError):
+            raise HTTPException(404, 'Preview not found')
+        if result['state'] != 'complete':
+            raise HTTPException(409, 'Finish the preview before opening its guitar parts.')
+        saved = result.get('result')
+        if type(saved) is not dict:
+            raise HTTPException(409, 'Saved guitar parts are unavailable for this preview.')
+        companion = saved.get('acoustic_companion')
+        if companion is None or (type(companion) is dict and companion.get('status') == 'unavailable'):
+            raise HTTPException(404, 'Separate guitar parts are unavailable for this saved preview.')
+        return result
+
+    @app.get('/api/jobs/{identity}/parts')
+    def parts(identity: str):
+        from acoustic_companion import VERSION, verify_saved
+        current = parts_job(identity)
+        try:
+            checked = verify_saved(library, current)
+            manifest, reference = checked['manifest'], checked['reference']
+            media = {row['name']: {'url': f"/api/jobs/{identity}/parts/{row['name']}",
+                                 'bytes': row['bytes'], 'sha256': row['sha256']}
+                     for row in reference['audio']}
+            return {'version': VERSION, 'manifest': manifest, 'manifest_sha256': reference['bundle_id'],
+                    'binding': {key: manifest[key] for key in ('source', 'clock', 'arrangement', 'renderer')},
+                    'media': media}
+        except (ValueError, KeyError, TypeError, OSError):
+            # Companion integrity cannot rewrite or invalidate an accepted job.
+            raise HTTPException(409, 'Saved guitar parts failed verification. The master preview is preserved.')
+
+    @app.get('/api/jobs/{identity}/parts/{name}')
+    def part_audio(identity: str, name: str):
+        from acoustic_companion import protect_saved
+        if name not in PART_FILES:
+            raise HTTPException(404, 'Guitar part not found')
+        current = parts_job(identity)
+        owner = ExitStack()
+        try:
+            checked = owner.enter_context(protect_saved(library, current))
+            row = next((row for row in checked['reference']['audio'] if row['name'] == name), None)
+            if row is None:
+                raise HTTPException(404, 'Guitar part not found')
+            return _ProtectedPartsResponse(checked['audio'][name], size=row['bytes'],
+                                           sha256=row['sha256'], owner=owner)
+        except (ValueError, KeyError, TypeError, OSError, StopIteration):
+            owner.close()
+            raise HTTPException(409, 'Saved guitar parts failed verification. The master preview is preserved.')
+        except BaseException:
+            owner.close()
+            raise
+
     @app.get('/api/previews/latest')
     def latest_preview():
         with library.connect() as db:
@@ -406,7 +490,7 @@ def create_app(root=None):
             (library.stage/(identity+'.cancel')).touch()
         return {'requested':True}
 
-    def mixed_spec(value, *, frozen=None):
+    def mixed_spec(value, *, frozen=None, companion_frozen=None):
         try:
             asset=library.get(value['asset_id'])
             if asset['kind']!='original': raise ValueError('Choose an imported original recording.')
@@ -421,6 +505,10 @@ def create_app(root=None):
             if type(performers) is not int or performers not in (1,2): raise ValueError('Choose one or two guitarists.')
             selection=selection_fields(value,performers)
             guidance=preview_guidance(value.get('guidance'),performers,selection)
+            from acoustic_companion import request_fields
+            companion_selection = {**selection, **({'acoustic_companion_version': value['acoustic_companion_version']}
+                                                   if 'acoustic_companion_version' in value else {})}
+            companion = request_fields(companion_selection, frozen=frozen if frozen is not None else companion_frozen)
         except (ValueError,KeyError,TypeError,AttributeError):
             raise HTTPException(400,'Choose an imported original, a valid passage up to 30 seconds, and one or two guitarists.')
         runtime=mixed_runtime_status() if frozen is None else {'ready':True,'manifest':{'runtime_version':frozen['runtime_version']}}
@@ -431,7 +519,7 @@ def create_app(root=None):
         spec={'kind':'mixed','asset_id':asset['id'],'sha256':asset['sha256'],
               'performers':performers,'start_seconds':start,'end_seconds':end,
               'pipeline_version':MIXED_PIPELINE_VERSION,'runtime_version':version,
-              'renderer_version':renderer_version(selection),**selection}
+              'renderer_version':renderer_version(selection),**selection,**companion}
         if not guidance_is_default(guidance): spec['guidance']=guidance
         if frozen is not None:
             for field in ('pipeline_version','renderer_version'): spec[field]=frozen[field]
@@ -510,8 +598,8 @@ def create_app(root=None):
             try:
                 spec=row['request']
                 # Rebuild from the public choices and compare all pinned versions.
-                choices={k:spec[k] for k in ('asset_id','start_seconds','end_seconds','performers','instrument','bass_part','guidance','electric_tone') if k in spec}
-                if mixed_spec(choices)!=spec:
+                choices={k:spec[k] for k in ('asset_id','start_seconds','end_seconds','performers','instrument','bass_part','guidance','electric_tone','acoustic_companion_version') if k in spec}
+                if mixed_spec(choices,companion_frozen=spec)!=spec:
                     raise ValueError('The processing software changed. Review and add a new request.')
                 if not await asyncio.to_thread(library.verify,spec['asset_id']):
                     raise ValueError('The saved original failed verification. Restore it before trying again.')

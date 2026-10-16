@@ -83,10 +83,12 @@ await electricControls.save.onclick();assert.equal(electricRequest.electric_tone
 
 // Execute actual app candidate completion/callback ownership without media.
 const app=decoder.decode(fs.readFileSync(new URL('./app.js',import.meta.url)));
+const partsLifecycle=app.slice(app.indexOf('function disposeAcousticParts(){'),app.indexOf('function pausePlayback(){'));
 const code=app.slice(app.indexOf('let resultGeneration='),app.indexOf("$('cancelDiagnostic').onclick"));
 const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,new Node(id));return nodes.get(id)};
-const stored=new Map();let callbacks,apiResolve,refreshes=0,stops=0;
+const stored=new Map();let callbacks,apiResolve,refreshes=0,stops=0,partsDisposals=0;
 const c={$ ,activeJob:null,activeJobKind:null,pollTimer:null,tracks:[track],bassAvailability:{ready:false},
+  acousticParts:{dispose(){partsDisposals++}},
   ELECTRIC_PREVIEW_ENABLED:false,electricAvailability:{ready:false},
   localStorage:{setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
   jobMessage:text=>$('message').textContent=text,button:(text,fn)=>Object.assign(new Node('button'),{textContent:text,onclick:fn}),
@@ -94,14 +96,17 @@ const c={$ ,activeJob:null,activeJobKind:null,pollTimer:null,tracks:[track],bass
   action:fn=>fn(),refresh:async()=>{refreshes++},comparison:{stop:()=>stops++,start:()=>{throw Error('Unexpected playback')}},
   setTimeout:()=>1,clearTimeout(){},apiJSON:()=>new Promise(r=>apiResolve=r),
   mixedCandidateSummary:()=>'',describeAdaptation:()=>'',play:()=>{throw Error('Unexpected playback')}};
-vm.createContext(c);vm.runInContext(code,c);
+vm.createContext(c);vm.runInContext(partsLifecycle+code,c);
 await c.showJob(job);assert.equal(refreshes,0);assert.equal(c.activeJob,null);assert.equal(stored.get('latestInstrumentalJob'),'parent');assert.equal(stored.has('latestPreviewJob'),false);
+assert.equal(partsDisposals,1,'Opening candidate review disposes the previous acoustic parts.');assert.equal(c.acousticParts,null);
 assert.equal($('instrumentalSaved').hidden,false);assert.equal($('instrumentalSubmit').disabled,false);
 const firstCallbacks=callbacks;
 const request={parent_job_id:'parent',interpretation:'published',note_ids:['p1'],instrument:'acoustic',accept_as_lead:true};
 const pending=firstCallbacks.submit(request);assert.equal(vm.runInContext('refinementStarting',c),true);
 // A newer result invalidates this pending callback; its response cannot replace it.
+c.acousticParts={dispose(){partsDisposals++}};
 await c.showJob({...job,id:'newer'});const before=stops;
+assert.equal(partsDisposals,2);assert.equal(c.acousticParts,null);
 apiResolve({id:'child',state:'queued',request:{kind:'instrumental-arrange'}});await pending;
 assert.equal(stored.get('latestInstrumentalJob'),'newer');assert.equal(c.activeJob,null);assert.equal(stops,before);
 await assert.rejects(firstCallbacks.submit(request),/no longer current/);

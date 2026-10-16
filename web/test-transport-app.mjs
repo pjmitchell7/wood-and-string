@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {engineWithFallback,playNative,nextQueueIndex} from './transport.mjs';
 const app=fs.readFileSync(new URL('./app.js',import.meta.url),'utf8');
+const partsLifecycle=app.slice(app.indexOf('function disposeAcousticParts(){'),app.indexOf('function pausePlayback(){'));
 const functions=app.slice(app.indexOf('function entryAt('),app.indexOf('async function refresh('));
 const bindings=app.slice(app.indexOf('function bindAudioEvents('),app.indexOf('bindAudioEvents();',app.indexOf('function bindAudioEvents(')));
+const preparedBinding=app.slice(app.indexOf("$('transportToggle').onclick="),app.indexOf("$('transportSeek').onchange="));
 class Audio {
  plays=0;pauses=0;hidden=false;events={};src='';volume=1;muted=false;playbackRate=1;
  async play(){this.plays++;if(this.reject)throw Error('native play denied')}
@@ -14,14 +16,14 @@ class Audio {
  cloneNode(){return new Audio()}replaceWith(value){this.replacement=value}
 }
 function rig(){
- const nodes=Object.fromEntries(['engine','bass','engineStatus','transportControls','transportVolume','repeat','shuffle','now'].map(id=>[id,{value:id==='engine'?'scheduled':id==='repeat'?'off':id==='transportVolume'?'0.35':'0',checked:false}]));
+ const nodes=Object.fromEntries(['engine','bass','engineStatus','transportControls','transportVolume','transportToggle','repeat','shuffle','now'].map(id=>[id,{value:id==='engine'?'scheduled':id==='repeat'?'off':id==='transportVolume'?'0.35':'0',checked:false}]));
  const messages=[],audio=new Audio();
- const scope={audio,context:null,source:null,eq:null,transport:null,objectUrl:null,playGeneration:0,current:-1,queueSignature:'',
+ const scope={audio,context:null,source:null,eq:null,transport:null,acousticParts:null,objectUrl:null,playGeneration:0,current:-1,queueSignature:'',
    tracks:[{id:'a',name:'Song',url:'/api/media/a',cached:false}],queue:['a'],
    $:id=>nodes[id],comparison:{stop(){}},navigator:{},drawQueue(){},status:s=>messages.push(s),session:async()=>{},
    engineWithFallback,playNative,nextQueueIndex,URL,
    AudioContext:class{constructor(){throw Error('context unavailable')}}};
- vm.createContext(scope);vm.runInContext(functions+bindings,scope);scope.bindAudioEvents();return {scope,nodes,messages,audio};
+ vm.createContext(scope);vm.runInContext(partsLifecycle+functions+bindings+preparedBinding,scope);scope.bindAudioEvents();return {scope,nodes,messages,audio};
 }
 {
  const r=rig();await r.scope.play(0);
@@ -57,5 +59,25 @@ function rig(){
  const r=rig();
  await engineWithFallback({configure:r.scope.configureEngine,useNative:r.scope.useNativeEngine,isCurrent:()=>true,onIssue:r.scope.status});
  assert.equal(r.audio.plays,0,'settings configuration cannot autoplay');
+}
+{
+ const r=rig(),order=[];
+ const parts={unload(){order.push('parts-unload')}};r.scope.acousticParts=parts;
+ r.scope.session=async()=>{order.push('master-load');assert.equal(r.scope.acousticParts,parts)};
+ r.audio.play=async()=>{order.push('master-play');r.audio.plays++};
+ await r.scope.play(0);
+ assert.deepEqual(order,['parts-unload','master-load','master-play'],'normal track navigation must release part audio before the master and retain its reloadable panel');
+}
+{
+ const r=rig(),order=[];
+ r.scope.acousticParts={unload(){order.push('parts-unload')}};
+ r.scope.comparison.stop=()=>order.push('comparison-stop');
+ r.scope.transport={pause(){order.push('main-pause')}};
+ r.audio.events.play();
+ assert.deepEqual(order,['parts-unload','comparison-stop','main-pause'],'direct native controls must release saved part audio');
+ order.length=0;
+ r.scope.transport={pending:false,entry:{id:'a'},paused:true,resume(){order.push('main-resume');return Promise.resolve()}};
+ r.nodes.transportToggle.onclick();
+ assert.deepEqual(order,['parts-unload','comparison-stop','main-resume'],'prepared transport resume must release saved part audio first');
 }
 console.log('PASS: actual app functions use native fallback for missing/failed contexts, replace failed routed media, suppress stale mode changes and handle rejected play without autoplay.');

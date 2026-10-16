@@ -21,7 +21,7 @@ def result_digest(value):
     return hashlib.sha256(raw).hexdigest()
 
 
-def prepare_refinement(library, parent_job_id, operations):
+def prepare_refinement(library, parent_job_id, operations, *, frozen=None):
     """Revalidate immutable parent evidence on admission and again in the worker.
 
     The returned spec is also the complete new job identity input. A parent's
@@ -104,6 +104,8 @@ def prepare_refinement(library, parent_job_id, operations):
                     renderer_version=renderer_version(selection), refinement_version=VERSION,
                     refinement_policy_version=POLICY_VERSION,
                     operations=normalized, **selection)
+        from acoustic_companion import request_fields
+        spec.update(request_fields(selection, frozen=frozen))
         if not guidance_is_default(guidance):
             spec['guidance'] = guidance
         return dict(spec=spec, parent=parent, original=original, current=current,

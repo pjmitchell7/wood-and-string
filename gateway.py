@@ -6,19 +6,33 @@ from contextlib import asynccontextmanager
 import json
 from pathlib import Path
 import re
+import anyio
 import httpx
 from fastapi import FastAPI,HTTPException,Request
 from fastapi.responses import FileResponse,JSONResponse,StreamingResponse
-from starlette.background import BackgroundTask
 from identity import library_identity
 from library import Library,MAX_IMPORT
 from pairing import Pairing
 
 ROOT=Path(__file__).parent
 COOKIE='__Host-guitar_device'
-FORWARD_GET=re.compile(r'^/api/(?:status|library|previews/latest|media/[a-zA-Z0-9-]+|jobs/[a-zA-Z0-9-]+|processing-queue(?:/[a-zA-Z0-9-]+)?)$')
+FORWARD_GET=re.compile(r'^/api/(?:status|library|previews/latest|media/[a-zA-Z0-9-]+|jobs/[a-zA-Z0-9-]+(?:/parts(?:/(?:performer-[12]|combined)\.wav)?)?|processing-queue(?:/[a-zA-Z0-9-]+)?)$')
 FORWARD_POST=re.compile(r'^/api/(?:import|diagnostic|extract|arrange-preview|refine-preview|instrumental-candidates|arrange-instrumental|jobs/[a-zA-Z0-9-]+/cancel|processing-queue(?:/[a-zA-Z0-9-]+/cancel)?)$')
 PUBLIC_FILES={'/pair.js':'pair.js','/pair.css':'pair.css','/icon.svg':'icon.svg'}
+
+
+class _ForwardedResponse(StreamingResponse):
+    """Release the authority stream even when a paired client disconnects."""
+    def __init__(self, upstream, *, headers):
+        self._upstream = upstream
+        super().__init__(upstream.aiter_raw(), status_code=upstream.status_code, headers=headers)
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            with anyio.CancelScope(shield=True):
+                await self._upstream.aclose()
 
 async def bounded_body(request,limit):
     data=bytearray()
@@ -120,11 +134,11 @@ def create_gateway(root,transport=None):
             upstream=await client.send(outgoing,stream=True)
         except httpx.HTTPError:raise HTTPException(503,'The library laptop service is unavailable. Downloaded music still works.')
         kept={key:value for key,value in upstream.headers.items() if key.lower() in ('content-type','content-length','content-range','accept-ranges','etag','x-content-sha256')}
-        return StreamingResponse(upstream.aiter_raw(),status_code=upstream.status_code,headers=kept,background=BackgroundTask(upstream.aclose))
+        return _ForwardedResponse(upstream,headers=kept)
 
     @app.get('/{path:path}')
     def static(path:str,request:Request):
-        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs','processing-outbox.mjs','sound-diagnostics.mjs','electric-tone.mjs'}
+        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs','processing-outbox.mjs','sound-diagnostics.mjs','electric-tone.mjs','stem-player.js','acoustic-parts.mjs'}
         full='/'+path
         if full in PUBLIC_FILES:return FileResponse(ROOT/'web'/PUBLIC_FILES[full])
         if not request.state.device or path not in permitted:raise HTTPException(404,'Page not found')

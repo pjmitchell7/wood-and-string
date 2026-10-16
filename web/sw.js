@@ -1,5 +1,5 @@
-const SHELL='wood-shell-v25',MEDIA='wood-media-v1';
-const ASSETS=['/','/index.html','/style.css','/app.js','/app.js?v=25','/refinement.mjs','/refinement.mjs?v=25','/instrumental.mjs','/instrumental.mjs?v=25','/backup.mjs','/capture.mjs','/capture-ui.mjs','/capture-journal.mjs','/devices.mjs','/mixed-preview.mjs','/mixed-preview.mjs?v=25','/transport.mjs','/transport.mjs?v=22','/processing-outbox.mjs','/processing-outbox.mjs?v=24','/sound-diagnostics.mjs','/sound-diagnostics.mjs?v=24','/electric-tone.mjs','/electric-tone.mjs?v=25','/manifest.webmanifest','/icon.svg'];
+const SHELL='wood-shell-v27',MEDIA='wood-media-v1';
+const ASSETS=['/','/index.html','/style.css','/style.css?v=27','/app.js','/app.js?v=27','/acoustic-parts.mjs','/acoustic-parts.mjs?v=27','/stem-player.js','/refinement.mjs','/refinement.mjs?v=25','/instrumental.mjs','/instrumental.mjs?v=25','/backup.mjs','/capture.mjs','/capture-ui.mjs','/capture-journal.mjs','/devices.mjs','/mixed-preview.mjs','/mixed-preview.mjs?v=25','/transport.mjs','/transport.mjs?v=22','/processing-outbox.mjs','/processing-outbox.mjs?v=24','/sound-diagnostics.mjs','/sound-diagnostics.mjs?v=24','/electric-tone.mjs','/electric-tone.mjs?v=25','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(installShell()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(url.origin!==self.location.origin||event.request.method!=='GET')return;

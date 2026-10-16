@@ -80,6 +80,7 @@ def run(root, identity, parent_gone=lambda:False):
     duration_limit=240 if job['request']['kind'] in ('mixed','instrumental') else 120
     cancelled=lambda:cancel.exists() or parent_gone() or time.monotonic()-started>duration_limit
     tone_failure_context=None
+    acoustic_parts=None
     def retain_tone_failure(error,state):
         if tone_failure_context is None:return None
         from tone_preview import bounded_process,ToneRefused
@@ -110,6 +111,8 @@ def run(root, identity, parent_gone=lambda:False):
             library.update_job(identity,'complete',1,result=result)
             return
         selection=validate_saved_selection(spec)
+        from acoustic_companion import AcousticCompanion, enabled as acoustic_parts_enabled
+        capture_acoustic_parts=acoustic_parts_enabled(spec)
         instrument=selection.get('instrument','acoustic')
         if selection and spec['kind'] not in ('mixed','refine','instrumental-arrange'):
             raise ValueError('Instrument selection is only supported for mixed previews and their revisions.')
@@ -121,7 +124,7 @@ def run(root, identity, parent_gone=lambda:False):
             from instrumental_preview import prepare_arrangement,arrange_review
             prepared=prepare_arrangement(library,{key:spec[key] for key in ('parent_job_id','interpretation','note_ids','accept_as_lead')} |
                 {'instrument':spec.get('instrument','acoustic')} |
-                ({'electric_tone':spec['electric_tone']} if 'electric_tone' in spec else {}))
+                ({'electric_tone':spec['electric_tone']} if 'electric_tone' in spec else {}),frozen=spec)
             if prepared['spec']!=spec:raise ValueError('The saved candidate review changed. Select the notes again.')
             source=prepared['source'];source_id=source['source_id'];origin=prepared['bundle']['origin']
             arrangement=arrange_review(prepared)
@@ -131,7 +134,7 @@ def run(root, identity, parent_gone=lambda:False):
             notice='Your selected uncertain candidates assigned as a lead part. Source instruments remain unknown; fixed note dynamics and estimated endings are not expressive transcription. No source waveform is mixed into this render.'
         elif spec['kind']=='refine':
             from preview_refinement import prepare_refinement, arrange_refinement
-            prepared=prepare_refinement(library,spec['parent_job_id'],spec['operations'])
+            prepared=prepare_refinement(library,spec['parent_job_id'],spec['operations'],frozen=spec)
             if prepared['spec'] != spec:
                 raise ValueError('The saved parent preview changed. Start this refinement again.')
             source=prepared['source'];source_id=source['source_id'];origin=prepared['origin']
@@ -251,9 +254,14 @@ def run(root, identity, parent_gone=lambda:False):
             arrangement['render_origin_sample']=origin
         renderer={'acoustic':render,'jazz-bass':render_bass,'electric':render_electric}[instrument]
         has_tone='electric_tone' in selection
+        render_options={}
+        if capture_acoustic_parts:
+            acoustic_parts=AcousticCompanion(library,identity,spec,source,arrangement,cancel=cancelled)
+            if acoustic_parts.capture is not None:render_options['stem_capture']=acoustic_parts.capture
         metrics=renderer(arrangement,output,cancel=cancelled,progress=lambda p:library.update_job(identity,'running',
-            .65+p*(.25 if has_tone else .35) if report else p*(.9 if has_tone else 1)))
+            .65+p*(.25 if has_tone else .35) if report else p*(.9 if has_tone else 1)),**render_options)
         if cancelled(): raise InterruptedError('Cancelled')
+        acoustic_companion=acoustic_parts.finish(output,metrics) if acoustic_parts is not None else None
         evidence=None
         if instrument=='electric':
             # The private sidecar retains the underlying adapter's prototype
@@ -290,6 +298,7 @@ def run(root, identity, parent_gone=lambda:False):
             if ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(),ctypes.byref(counters),counters.cb):
                 metrics['peak_working_set_bytes']=counters.PeakWorkingSetSize
         result={'asset':item,'arrangement':arrangement,'metrics':metrics,'notice':notice,'analysis':report}
+        if acoustic_companion is not None:result['acoustic_companion']=acoustic_companion
         if evidence is not None:result['render_evidence']=evidence
         if tone_reference is not None:
             result.update(tone_evidence=tone_reference,effects=tone_receipt,tone_process=tone_process)
@@ -306,6 +315,10 @@ def run(root, identity, parent_gone=lambda:False):
         library.update_job(identity,'failed',result=retain_tone_failure(e,'failed'),error=f'Preview failed: {type(e).__name__}. Local error details saved.')
     finally:
         attention=[]
+        if acoustic_parts is not None:
+            try:
+                if not acoustic_parts.cleanup():attention.append({'operation':'acoustic-companion-staging'})
+            except (OSError,ValueError):attention.append({'operation':'acoustic-companion-staging'})
         for path in (output,cancel,analysis,analysis_partial,decoded,decoded_partial,
                      output.with_suffix('.wav.partial'),output.with_suffix('.wav.float.partial'),
                      output.with_suffix('.wav.dry.f32'),output.with_suffix('.wav.receipt.json'),

@@ -52,6 +52,7 @@ console.log('PASS Electric solo/duo requests, fixed accompaniment, metadata note
 // Exercise actual app handlers. The enabled variants change only the in-memory
 // test copy of the gate, to check future branch behavior without enabling UI.
 const app=fs.readFileSync(new URL('./app.js',import.meta.url),'utf8');
+const partsLifecycle=app.slice(app.indexOf('function disposeAcousticParts(){'),app.indexOf('function pausePlayback(){'));
 assert.match(app,/const ELECTRIC_PREVIEW_ENABLED=false;/);
 const gate=app.slice(app.indexOf('const ELECTRIC_PREVIEW_ENABLED='),app.indexOf('let bassAvailability='));
 const forms=app.slice(app.indexOf("$('mixedForm').onsubmit="),app.indexOf('function selectExtraction('));
@@ -122,15 +123,18 @@ await invalidTone.$('mixedForm').onsubmit({preventDefault(){}});assert.equal(inv
 
 // Saved results stay readable and correctly labelled while new revisions and
 // candidate submissions remain gated, even if a caller bypasses disabled UI.
-const viewed=appRig({ready:true});let refinementSubmit,candidateSubmit;
+const viewed=appRig({ready:true});let refinementSubmit,candidateSubmit,partsDisposals=0;
 Object.assign(viewed.scope,{tracks:[{...source},{id:'render'}],localStorage:{setItem(){},removeItem(){}},
+  acousticParts:{dispose(){partsDisposals++}},
   refresh:async()=>{},button:(text,onclick)=>({textContent:text,onclick}),setTimeout:()=>1,clearTimeout(){},
   mixedCandidateSummary:()=>'',describeAdaptation:()=>'',mountRefinement:options=>{refinementSubmit=options.submit},mountSoundDiagnostics(){},
   mountInstrumentalCandidates:options=>{candidateSubmit=options.submit},
   play:()=>{throw Error('Playback forbidden')},download:()=>{throw Error('Download forbidden')}});
-vm.runInContext(app.slice(app.indexOf('let resultGeneration='),app.indexOf("$('cancelDiagnostic').onclick")),viewed.scope);
+vm.runInContext(partsLifecycle+app.slice(app.indexOf('let resultGeneration='),app.indexOf("$('cancelDiagnostic').onclick")),viewed.scope);
 await viewed.scope.showJob({id:'electric-saved',state:'complete',request:{kind:'mixed',asset_id:'original',start_seconds:1,end_seconds:3,performers:2,instrument:'electric'},
   result:{asset:{id:'render'},arrangement:{notes:[],adaptations:[]}}});
+assert.equal(partsDisposals,1,'Opening saved Electric results releases the previous acoustic part engine.');
+assert.equal(viewed.scope.acousticParts,null);
 assert.ok(viewed.$('diagnosticResult').children.some(n=>n.textContent==='Play Electric guitar preview'));
 assert.ok(viewed.$('diagnosticResult').children.some(n=>n.textContent?.includes('Experimental dry Electric guitar')));
 await assert.rejects(()=>refinementSubmit({parent_job_id:'electric-saved',operations:[{kind:'omit',note_ids:['x']}]}),/still being tested/);

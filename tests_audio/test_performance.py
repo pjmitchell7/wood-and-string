@@ -42,12 +42,18 @@ class ArrangementTests(unittest.TestCase):
             with self.assertRaises(ValueError):arrange(fixture(),n)
     def test_string_maps_have_no_other_strings(self):
         from audio.performance import NAMES
+        from audio import render
+        from pathlib import Path
+        from unittest.mock import patch
         import re
-        for i,name in enumerate(NAMES):
-            s=string_sfz(i)
-            self.assertEqual(set(re.findall(r'String(\w+)_Vel',s)),{name})
-            self.assertNotIn('lochan=',s)
-            self.assertIn('pitch_random=0',s)
+        # Mapping inspection needs only the retained public metadata, not audio.
+        reference=Path(__file__).resolve().parents[1]/'audio/provenance'
+        with patch.object(render,'ASSETS',reference):
+            for i,name in enumerate(NAMES):
+                s=string_sfz(i)
+                self.assertEqual(set(re.findall(r'String(\w+)_Vel',s)),{name})
+                self.assertNotIn('lochan=',s)
+                self.assertIn('pitch_random=0',s)
 
 if __name__=='__main__':unittest.main()
 

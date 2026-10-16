@@ -64,3 +64,15 @@ audio/capture_archive.py -text whitespace=cr-at-eol
 audio/local_arranger_batch_plan.py -text whitespace=cr-at-eol
 audio/local_arranger_batch_worker.py -text whitespace=cr-at-eol
 audio/arranger_diagnostics.py -text whitespace=cr-at-eol
+audio/research/run_local_arranger_public8.py -text whitespace=cr-at-eol
+# Preserve the separately reviewed acoustic comparison; old freezes stay intact.
+audio/basic_pitch_repaired.py -text
+audio/acoustic_phrase_planner.py -text
+audio/guitarset_resynthesis.py -text
+audio/research/run_guitarset_resynthesis.py -text
+tests/test_basic_pitch_repaired.py -text
+tests/test_acoustic_phrase_planner.py -text
+tests/test_guitarset_resynthesis.py -text
+tests/test_guitarset_resynthesis_controller.py -text
+audio/guitarset_listening.py -text
+tests/test_guitarset_listening.py -text

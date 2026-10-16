@@ -10,6 +10,10 @@ The prototype stores and plays local music, makes short experimental acoustic an
 
 There’s also a processing queue: save a short preview request on a device, send it when the laptop is reachable, and let it wait if the laptop is busy. Phone setup and real-device testing are still ahead.
 
+I want three ways to arrange a song: Keep it close, Essentials and Reimagine. Essentials would keep the riff or melody I came to hear and leave the extra layers out. A synth or vocal might carry that hook in the original; translating it to guitar shouldn’t mean pretending it was a guitar all along. These choices are still being developed.
+
+I’m also working on separate playable parts. Muting one guitarist in a duet leaves a duet with a muted part; making a complete solo version takes different musical decisions. The first software controls for aligned parts and saved mixes pass silent tests, but they aren’t connected to the player yet.
+
 ## How I’m putting it together
 
 ![The short-preview flow: keep the original, estimate notes, assign parts, play instruments, then save and revise.](diagrams/how-a-preview-works.png)

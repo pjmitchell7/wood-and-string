@@ -1,0 +1,25 @@
+# Coherent note interpretations and staggered patterns
+
+The first independent focus review found two reproducible interpretation defects. Moving one of two recurring lines by one sample turned two alternatives into a uniquely chosen woven line. Combining two decoder inventories also manufactured a repeated pattern when each inventory contained only one occurrence. The original review, inputs and failed outcomes remain private and unchanged.
+
+The repaired proposer searches each complete decoder inventory separately. Every hypothesis names its supporting policy, path and method. An automatic local choice requires one attack group with support in both inventories and a complete bounded search. A candidate supported by one inventory remains visible as policy disagreement. Two decoders of the same model are related estimates; their agreement does not verify a physical pluck, musical role or author intent.
+
+The existing minimum-pitch-leap paths remain candidates. An additional search inspects every pitch gap in the nonstationary candidates. If both sides contain recurring moving patterns and at least one pair of occurrence spans overlaps, both patterns become inspectable alternatives. Their exact source onsets are preserved, whether simultaneous or staggered. This uses no timing tolerance, onset quantization, attack merge, gate extension, activation ranking or preference for a higher register.
+
+This correction is deliberately limited. A single player can interleave high and low material, so a pitch cut may introduce ambiguity within one physical part. Crossing lines or voices in the same register can evade this heuristic. Exact recurrence can miss expressive timing and tempo changes. Stationary chord material can itself be the hook. These candidates are evidence for a future arranger, not a recognized main riff or a verified player count.
+
+Each inventory admits at most 127 distinct pitch cuts and 16 qualifying split covers. Recurrence windows and occurrence-span comparisons share the existing 32,768-operation motif budget; minimum-leap assignments retain their 8,192-placement bound. Exhaustion defers selection. Existing bounds of 256 families, 1,024 observations, 512 KiB input and 768 KiB output remain. Complete source observations, competing endings, detached metadata and exhaustive omission ledgers remain unchanged. Cancellation is checked during search.
+
+Validation is silent and symbolic. It includes clear automatic positives, staggered alternatives, conflicting policies, split-occurrence controls, fast distinct notes, sequential sections, invariants, preservation and bounded refusal. The independent reviewer wrote regression expectations before running the repaired source. Exact results and source identities are recorded after execution, without treating development controls as musical acceptance.
+
+No worker, composer, Essentials mode, renderer or player is activated by this repair. The saved six-second context can be recalculated separately without rereading the recording, database or raw model archive. No model inference, checkpoint conversion, acquisition, audible playback or real-device check follows from this component.
+
+## Recorded development outcome
+
+The independent reviewer repeats all 27 unit methods, 9 separately authored regression methods, 56 unchanged neutral variations, 11 original adversarial contexts and one asymmetric-policy control. No actionable defect remains within this declared symbolic scope. The regressions were written before executing the repair. These checks establish policy behavior, not physical voices or musical fidelity.
+
+For the staggered-line counterexample, two three-note patterns recur 10,000 source samples later. Their onsets remain exact at 44,100 Hz. Moving the second pattern by one sample previously erased both separate explanations and selected a woven composite. The repair retains both six-attack patterns, alongside the possible woven explanation, and selects none. Additional distinct offsets through 2,204 samples retain the alternatives without coalescing attacks. This does not decide whether one or two players produced the notes.
+
+For conflicting decoder inventories, each recurring six-attack pattern now carries only its actual policy support. When each policy contains only one three-attack occurrence, the repair emits no recurrence. A one-policy-only recurring candidate remains visible without automatic selection. Clear agreed four-note recurring lines still produce a useful local choice, including notes separated by a single source sample.
+
+The previously inspected six-second development snapshot remains inconclusive. It contains 46/50 observations, 58 onset/pitch families and 14 competing endings. Recalculation preserves them all and leaves 58 unresolved families, with no recurring moving hypothesis. Search completes 188 placements, 9,044 motif/span operations and 22 pitch cuts. The next discriminating work is prospective phrase and expressive-timing evidence, including nonrepeating material and competing attack interpretations. This result does not justify widening a timing tolerance or silently extending notes.

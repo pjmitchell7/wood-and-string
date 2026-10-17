@@ -32,6 +32,8 @@ One useful lesson was that an engine fix left the rejected previews completely u
 
 I’ve added a [phrase reader](docs/INSTRUMENTAL-PHRASE-EVIDENCE-001.md) that keeps both note interpretations and the activity around uncertain passages. Its saved-data checks pass. Choosing the main riff and interpreting those gaps are the next problems to solve.
 
+I'm also testing a [small focus proposer](docs/FOCUS-POLICY-REPAIR-002.md) that looks for recurring lines while keeping both note interpretations intact. It now keeps staggered patterns and policy disagreements visible instead of combining them into one confident answer. This is still an experimental step toward choosing the part to arrange, and it does not establish that a recreated song sounds right.
+
 That has shaped the engineering: keep originals intact, preserve source timing, show uncertain notes and omissions, and keep vocal removal separate from recreating a performance. A successful render or a passing test doesn’t mean the arrangement sounds right.
 
 Next is making those musical decisions better, then returning to real-song listening comparisons. The two songs above are inspirations and planned tests, not examples I’ve already recreated successfully.

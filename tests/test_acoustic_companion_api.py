@@ -360,7 +360,7 @@ class CompanionGatewayAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_parts_routes_require_pairing_and_forward_only_fixed_names(self):
-        for path in (self.prefix, self.prefix + '/performer-1.wav', '/stem-player.js', '/acoustic-parts.mjs'):
+        for path in (self.prefix, self.prefix + '/performer-1.wav', '/stem-player.js', '/acoustic-parts.mjs', '/acoustic-mix-store.mjs'):
             self.assertEqual(self.client.get(path).status_code, 401)
         self.assertFalse(self.forwarded)
         self.pair()
@@ -383,10 +383,10 @@ class CompanionGatewayAPI(unittest.TestCase):
 
     def test_parts_static_modules_keep_pairing_and_exact_static_boundary(self):
         self.pair()
-        for name in ('stem-player.js', 'acoustic-parts.mjs'):
+        for name in ('stem-player.js', 'acoustic-parts.mjs', 'acoustic-mix-store.mjs'):
             path = server.ROOT / 'web' / name
             self.assertTrue(path.is_file(), 'The paired player module must exist')
-            self.assertEqual(self.client.get('/' + name + '?v=26').status_code, 200)
+            self.assertEqual(self.client.get('/' + name + '?v=28').status_code, 200)
             self.assertEqual(self.client.get('/' + name + '/extra').status_code, 404)
         self.assertFalse(self.forwarded)
 

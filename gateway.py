@@ -138,7 +138,7 @@ def create_gateway(root,transport=None):
 
     @app.get('/{path:path}')
     def static(path:str,request:Request):
-        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs','processing-outbox.mjs','sound-diagnostics.mjs','electric-tone.mjs','stem-player.js','acoustic-parts.mjs'}
+        permitted={'index.html','app.js','style.css','sw.js','manifest.webmanifest','icon.svg','backup.mjs','capture.mjs','capture-ui.mjs','capture-journal.mjs','devices.mjs','mixed-preview.mjs','refinement.mjs','instrumental.mjs','transport.mjs','processing-outbox.mjs','sound-diagnostics.mjs','electric-tone.mjs','stem-player.js','acoustic-parts.mjs','acoustic-mix-store.mjs'}
         full='/'+path
         if full in PUBLIC_FILES:return FileResponse(ROOT/'web'/PUBLIC_FILES[full])
         if not request.state.device or path not in permitted:raise HTTPException(404,'Page not found')

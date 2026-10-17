@@ -1,6 +1,7 @@
 // Verified saved acoustic parts. Importing creates no audio context or nodes.
 import {pcm16} from './transport.mjs?v=22';
 import * as StemModule from './stem-player.js';
+import {mixIdentity} from './acoustic-mix-store.mjs?v=28';
 
 export const VERSION='acoustic-companion-v1';
 const STORE_VERSION='acoustic-stem-store-v1', RATE=44100, MAX_FRAMES=31*RATE;
@@ -126,17 +127,47 @@ export async function validatePartBytes(bytes,file,clock,crypto=globalThis.crypt
 
 export function createAcousticParts({fetcher=globalThis.fetch,crypto=globalThis.crypto,session=async()=>{},beforePlay=()=>{},onChange=()=>{},
   contextFactory=()=>new(globalThis.AudioContext||globalThis.webkitAudioContext)(),setTick=fn=>setInterval(fn,100),clearTick=clearInterval,
-  setDeadline=(fn,ms)=>setTimeout(fn,ms),clearDeadline=clearTimeout}={}){
+  setDeadline=(fn,ms)=>setTimeout(fn,ms),clearDeadline=clearTimeout,mixStore}={}){
   let generation=0,operation=0,controller,metadata,trusted,encoded,context,engine,timer,deadline,flight,status='empty',error='',offset=0;
+  let mixStatus='default',mixNotice='',mixRevision=0;
   const muted=new Set();
   function snapshot(){return {status,error,ready:Boolean(metadata),duration:metadata?metadata.manifest.clock.frames/RATE:0,
     position:engine?engine.position():offset,playing:engine?.state==='playing',allMuted:metadata?muted.size===metadata.manifest.stems.length:false,
-    label:metadata?.manifest.arrangement.performers===2?'Duo mix':'Solo mix',parts:metadata?.manifest.stems.map(s=>({id:s.id,role:s.role,audible:!muted.has(s.id)}))||[]}}
+    mixStatus,mixNotice,label:metadata?.manifest.arrangement.performers===2?'Duo mix':'Solo mix',parts:metadata?.manifest.stems.map(s=>({id:s.id,role:s.role,audible:!muted.has(s.id)}))||[]}}
   const emit=()=>onChange(snapshot());
   function stopTick(){if(timer!==undefined){clearTick(timer);timer=undefined}}
   function tick(){if(engine?.state==='ended'){status='ended';stopTick()}emit()}
   function closeAudio(){stopTick();engine?.dispose();engine=null;const old=context;context=null;if(old)Promise.resolve(old.close()).catch(()=>{})}
-  function retire(next){generation++;operation++;controller?.abort();controller=null;if(deadline!==undefined){clearDeadline(deadline);deadline=undefined}closeAudio();metadata=null;trusted=null;encoded=null;flight=null;muted.clear();offset=0;error='';status=next}
+  function retire(next){generation++;operation++;mixRevision++;controller?.abort();controller=null;if(deadline!==undefined){clearDeadline(deadline);deadline=undefined}closeAudio();metadata=null;trusted=null;encoded=null;flight=null;muted.clear();offset=0;error='';mixStatus='default';mixNotice='';status=next}
+  async function rememberedMix(identity,signal){
+    let abort;
+    const interrupted=new Promise((resolve,reject)=>{abort=()=>reject(Error('Mix settings loading cancelled.'));signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort()});
+    try{
+      const value=await Promise.race([Promise.resolve().then(()=>mixStore.load(identity)),interrupted]);
+      fail(value===null||(Array.isArray(value)&&value.length<=identity.stem_ids.length),'Saved mix settings have changed.');
+      if(value===null)return null;
+      const selected=[];
+      for(let index=0;index<value.length;index++){
+        const entry=Object.getOwnPropertyDescriptor(value,String(index));
+        fail(entry&&Object.hasOwn(entry,'value')&&typeof entry.value==='string'&&identity.stem_ids.includes(entry.value)&&!selected.includes(entry.value),'Saved mix settings have changed.');
+        selected.push(entry.value);
+      }
+      return selected;
+    }finally{signal.removeEventListener('abort',abort)}
+  }
+  function saveMix(){
+    if(!mixStore)return;
+    const token=generation,revision=++mixRevision,identity=mixIdentity(trusted),ids=identity.stem_ids.filter(id=>muted.has(id));
+    mixStatus='saving';mixNotice='Remembering your mix on this device…';
+    let saved;try{saved=mixStore.save(identity,ids)}catch(e){saved=Promise.reject(e)}
+    Promise.resolve(saved).then(()=>{
+      if(token!==generation||revision!==mixRevision)return;
+      mixStatus='saved';mixNotice='Your listening mix is remembered on this device.';emit();
+    },()=>{
+      if(token!==generation||revision!==mixRevision)return;
+      mixStatus='unavailable';mixNotice='This mix works for now, but could not be remembered on this device.';emit();
+    });
+  }
   async function load(job){
     fail(status!=='disposed','This saved parts panel is closed.');
     retire('loading');const token=generation;controller=new AbortController();const request=controller,signal=controller.signal;
@@ -153,6 +184,13 @@ export function createAcousticParts({fetcher=globalThis.fetch,crypto=globalThis.
         await validatePartBytes(bytes,stem.file,checked.manifest.clock,crypto);if(token!==generation)return false;
         files.set(stem.id,bytes);
       }
+      let remembered=null;
+      if(mixStore){
+        try{remembered=await rememberedMix(mixIdentity(expected),signal)}
+        catch(e){if(token!==generation)return false;mixStatus='unavailable';mixNotice='Your saved mix could not be loaded. All players are on; choose a mix to remember it again.'}
+        if(token!==generation)return false;
+      }
+      if(remembered!==null){for(const id of remembered)muted.add(id);mixStatus='saved';mixNotice='Your listening mix is remembered on this device.'}
       trusted=expected;metadata=checked;encoded=files;status='ready';clearDeadline(deadline);deadline=undefined;emit();return true;
     }catch(e){if(token!==generation)return false;retire('error');error=e.message;emit();throw e}
   }
@@ -179,8 +217,8 @@ export function createAcousticParts({fetcher=globalThis.fetch,crypto=globalThis.
     const token=generation,action=++operation;const started=await engine.seek(offset);
     if(token!==generation||action!==operation)return false;status=engine.state;if(started){stopTick();timer=setTick(tick)}else stopTick();emit();return started;
   }
-  function setMuted(id,value){fail(metadata?.manifest.stems.some(s=>s.id===id)&&typeof value==='boolean','That saved player is unavailable.');if(value)muted.add(id);else muted.delete(id);engine?.setMuted(id,value);emit()}
-  function all(){fail(metadata,'Load the saved parts first.');muted.clear();engine?.setAllMuted(false);emit()}
+  function setMuted(id,value){fail(metadata?.manifest.stems.some(s=>s.id===id)&&typeof value==='boolean','That saved player is unavailable.');if(value)muted.add(id);else muted.delete(id);engine?.setMuted(id,value);saveMix();emit()}
+  function all(){fail(metadata,'Load the saved parts first.');muted.clear();engine?.setAllMuted(false);saveMix();emit()}
   function unload(){if(status==='disposed')return;retire('empty');emit()}
   function dispose(){if(status==='disposed')return;retire('disposed');emit()}
   return {load,play,pause,seek,setMuted,all,unload,dispose,snapshot};
@@ -198,6 +236,7 @@ export function mountAcousticParts({job,root,capability,document:doc=globalThis.
   seek.type='range';seek.min='0';seek.max='0';seek.step='0.01';seek.value='0';seek.disabled=true;seek.setAttribute('aria-label','Seek in saved acoustic parts');
   parts.className='acoustic-part-buttons';controls.append(load,play,all);section.append(title,label,notice,controls,parts,seek,time);
   const help=element('p',job.request?.performers===2?'Muting a player changes this Duo mix. A complete Solo is a separate arrangement.':'This is the complete saved Solo part.');help.className='muted';section.append(help);root.append(section);
+  const mixNotice=element('p');mixNotice.className='muted';mixNotice.hidden=true;mixNotice.setAttribute('role','status');section.append(mixNotice);
   const buttons=new Map(),format=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
   const playback=createAcousticParts({...options,onChange:state=>{
     load.disabled=state.status==='loading';load.hidden=state.ready;load.textContent=state.status==='loading'?'Loading parts…':state.status==='error'?'Try loading parts':'Load saved parts';
@@ -205,6 +244,7 @@ export function mountAcousticParts({job,root,capability,document:doc=globalThis.
     play.textContent=state.playing?'Pause parts':state.status==='starting'?'Cancel playback':'Play parts';
     label.textContent=state.ready?state.label+(state.allMuted?' · all players muted':''):(job.request?.performers===2?'Duo mix':'Solo mix');
     notice.textContent=state.error?(state.status==='error'?'Saved parts could not be verified or loaded. Use the normal preview above.':state.error):state.status==='loading'?'Loading saved parts…':state.ready?'Choose the players you want to hear.':'Load the saved parts to listen to each player. The normal preview above remains available.';
+    mixNotice.textContent=state.mixNotice;mixNotice.hidden=!state.mixNotice;
     seek.max=String(state.duration);seek.value=String(state.position);time.textContent=`${format(state.position)} / ${format(state.duration)}`;
     for(const [id,b] of buttons){if(!state.parts.some(part=>part.id===id)){b.disabled=true;b.onclick=()=>{};b.remove();buttons.delete(id)}}
     for(const part of state.parts){let b=buttons.get(part.id);if(!b){b=element('button');b.type='button';b.onclick=()=>{const current=playback.snapshot(),saved=current.parts.find(p=>p.id===part.id);if(current.ready&&saved)playback.setMuted(part.id,saved.audible)};buttons.set(part.id,b);parts.append(b)}

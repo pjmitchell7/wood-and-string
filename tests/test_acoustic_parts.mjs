@@ -173,6 +173,73 @@ test('unload aborts an in-flight load and fences a pending resume without hidden
   pending.player.dispose();r.player.dispose();
 });
 
+test('remembered mix restores only after verification, stays silent and preserves the complete Duo',async()=>{
+  const f=fixture(),before=canonical(f.job),reads=[],writes=[];
+  const r=rig(f,{mixStore:{async load(identity){reads.push(identity);return ['performer-2']},async save(...args){writes.push(args)}}});
+  await r.player.load(f.job);assert.equal(r.contexts.length,0);assert.deepEqual(r.events,[]);
+  assert.equal(reads.length,1);assert.equal(reads[0].job_id,f.job.id);assert.equal(reads[0].bundle_id,f.metadata.manifest_sha256);
+  assert.deepEqual(reads[0].stem_ids,['performer-1','performer-2']);
+  assert.deepEqual(r.player.snapshot().parts.map(p=>p.audible),[true,false]);assert.equal(r.player.snapshot().label,'Duo mix');
+  assert.equal(r.player.snapshot().mixStatus,'saved');assert.equal(writes.length,0);assert.equal(canonical(f.job),before);
+  await r.player.play();const c=r.contexts[0];assert.equal(c.sources.length,2);assert.equal(c.sources[0].when,c.sources[1].when);
+  assert.ok(c.gains.some(g=>g.gain.events.some(e=>e.value===0)),'restored mute reaches the player gain');
+  r.player.dispose();assert.equal(canonical(f.job),before);
+});
+
+test('all-muted remembered mix is explicit and All durably restores the available players',async()=>{
+  const writes=[],r=rig(fixture(),{mixStore:{async load(){return ['performer-1','performer-2']},async save(identity,ids){writes.push({identity,ids})}}});
+  await r.player.load(r.f.job);assert.equal(r.player.snapshot().allMuted,true);assert.equal(r.player.snapshot().label,'Duo mix');
+  r.player.all();await flush();assert.ok(r.player.snapshot().parts.every(p=>p.audible));assert.deepEqual(writes[0].ids,[]);
+  assert.equal(r.player.snapshot().mixStatus,'saved');assert.equal(r.contexts.length,0);r.player.dispose();
+});
+
+test('rapid changes snapshot each save and stale completions cannot replace the latest storage notice',async()=>{
+  const writes=[],r=rig(fixture(),{mixStore:{async load(){return null},save(identity,ids){const done=deferred();writes.push({identity,ids,done});return done.promise}}});
+  await r.player.load(r.f.job);r.player.setMuted('performer-2',true);r.player.setMuted('performer-2',false);r.player.setMuted('performer-1',true);
+  assert.deepEqual(writes.map(w=>w.ids),[['performer-2'],[],['performer-1']]);
+  assert.equal(r.player.snapshot().mixStatus,'saving');writes[2].done.reject(Error('quota'));await flush();
+  assert.equal(r.player.snapshot().mixStatus,'unavailable');assert.match(r.player.snapshot().mixNotice,/works for now/);
+  writes[0].done.resolve();writes[1].done.resolve();await flush();assert.equal(r.player.snapshot().mixStatus,'unavailable');
+  assert.deepEqual(r.player.snapshot().parts.map(p=>p.audible),[false,true]);assert.equal(r.contexts.length,0);
+  r.player.all();writes[3].done.resolve();await flush();assert.equal(r.player.snapshot().mixStatus,'saved');r.player.dispose();
+});
+
+test('storage failures and corrupt preferences leave verified audio available without silently rewriting settings',async()=>{
+  const cases=[()=>Promise.reject(Error('storage unavailable')),()=>['unknown-player'],()=>['performer-1','performer-1'],()=>Array(1),()=>({muted_ids:[]}),()=>undefined];
+  for(const result of cases){let saves=0;const r=rig(fixture(),{mixStore:{load:result,save(){saves++;throw Error('closed')}}});
+    assert.equal(await r.player.load(r.f.job),true);assert.equal(r.player.snapshot().ready,true);assert.equal(r.player.snapshot().mixStatus,'unavailable');
+    assert.ok(r.player.snapshot().parts.every(p=>p.audible));assert.equal(saves,0);assert.equal(r.contexts.length,0);
+    r.player.setMuted('performer-1',true);await flush();assert.equal(saves,1);assert.equal(r.player.snapshot().parts[0].audible,false);
+    assert.equal(r.player.snapshot().mixStatus,'unavailable');r.player.dispose();
+  }
+});
+
+test('unload and dispose cancel a pending preference restore without late mute or audio work',async()=>{
+  for(const action of ['unload','dispose']){
+    const entered=deferred(),read=deferred(),r=rig(fixture(),{mixStore:{load(){entered.resolve();return read.promise},async save(){assert.fail('no save during restore')}}});
+    const loading=r.player.load(r.f.job);await entered.promise;r.player[action]();assert.equal(await loading,false);
+    read.resolve(['performer-1']);await flush();assert.equal(r.player.snapshot().ready,false);assert.deepEqual(r.player.snapshot().parts,[]);
+    assert.equal(r.contexts.length,0);assert.deepEqual(r.events,[]);r.player.dispose();
+  }
+});
+
+test('a new load cannot inherit a previous delayed restore or stale save result',async()=>{
+  const entered=deferred(),read=deferred(),saved=deferred();let reads=0;
+  const r=rig(fixture(),{mixStore:{load(){if(++reads===1){entered.resolve();return read.promise}return Promise.resolve([])},save(){return saved.promise}}});
+  const oldLoad=r.player.load(r.f.job);await entered.promise;assert.equal(await r.player.load(r.f.job),true);assert.equal(await oldLoad,false);
+  read.resolve(['performer-2']);await flush();assert.ok(r.player.snapshot().parts.every(p=>p.audible));
+  r.player.setMuted('performer-1',true);r.player.unload();await r.player.load(r.f.job);saved.reject(Error('old write failed'));await flush();
+  assert.equal(r.player.snapshot().mixStatus,'saved');assert.ok(r.player.snapshot().parts.every(p=>p.audible));assert.equal(r.contexts.length,0);r.player.dispose();
+});
+
+test('preference timeout falls back to all players after audio verification',async()=>{
+  const entered=deferred(),read=deferred();let deadline,cleared=0;
+  const r=rig(fixture(),{mixStore:{load(){entered.resolve();return read.promise},async save(){}},setDeadline(fn){deadline=fn;return 42},clearDeadline(id){assert.equal(id,42);cleared++}});
+  const loading=r.player.load(r.f.job);await entered.promise;deadline();assert.equal(await loading,true);
+  assert.equal(r.player.snapshot().ready,true);assert.equal(r.player.snapshot().mixStatus,'unavailable');assert.ok(r.player.snapshot().parts.every(p=>p.audible));
+  assert.equal(cleared,1);read.resolve(['performer-2']);await flush();assert.ok(r.player.snapshot().parts.every(p=>p.audible));r.player.dispose();
+});
+
 class Element{
   children=[];attributes={};textContent='';disabled=false;hidden=false;value='';
   constructor(tag){this.tagName=tag}
@@ -225,9 +292,9 @@ test('old capability, legacy and unavailable jobs show no controls and never fet
   delete f.job.result.acoustic_companion;assert.equal(mountAcousticParts({job:f.job,root,capability:VERSION,document}),null);
   f.job.result.acoustic_companion={version:VERSION,status:'unavailable'};assert.equal(mountAcousticParts({job:f.job,root,capability:VERSION,document}),null);assert.equal(root.children.length,0);
 });
-test('app lifecycle and shell27 wire every main engine and preserve Electric gate and unchanged modules',()=>{
+test('app lifecycle and shell28 wire every main engine and preserve Electric gate and unchanged modules',()=>{
   const app=fs.readFileSync(new URL('../web/app.js',import.meta.url),'utf8'),html=fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8'),sw=fs.readFileSync(new URL('../web/sw.js',import.meta.url),'utf8');
-  assert.match(app,/ELECTRIC_PREVIEW_ENABLED=false/);assert.match(app,/acoustic-parts\.mjs\?v=27/);assert.match(app,/transport\.mjs\?v=22/);
+  assert.match(app,/ELECTRIC_PREVIEW_ENABLED=false/);assert.match(app,/acoustic-parts\.mjs\?v=28/);assert.match(app,/transport\.mjs\?v=22/);
   for(const event of ['pagehide','play','seeking'])assert.ok(app.includes("'"+event+"'"));
   assert.match(app,/audio\.addEventListener\('play',[^\n]+releaseAcousticParts/);
   assert.match(app,/transportToggle'\)\.onclick=\(\)=>\{releaseAcousticParts/);
@@ -235,6 +302,6 @@ test('app lifecycle and shell27 wire every main engine and preserve Electric gat
   assert.match(app,/releaseAcousticParts\(\);comparison\.stop\(\);pausePlayback\(\);restoreBusy=true/);
   assert.match(app,/setTimeout\(\(\)=>\{releaseAcousticParts\(\);comparison\.stop\(\);pausePlayback/);
   assert.match(app,/pagehide',[^\n]+disposeAcousticParts/);assert.match(app,/mountCapture\([^\n]+releaseAcousticParts/);
-  assert.match(html,/app\.js\?v=27/);assert.match(html,/style\.css\?v=27/);assert.match(sw,/wood-shell-v27/);
-  assert.ok(sw.includes('/acoustic-parts.mjs?v=27')&&sw.includes('/stem-player.js')&&!sw.includes('/api/jobs/'));
+  assert.match(html,/app\.js\?v=28/);assert.match(html,/style\.css\?v=28/);assert.match(sw,/wood-shell-v28/);
+  assert.ok(sw.includes('/acoustic-parts.mjs?v=28')&&sw.includes('/stem-player.js')&&!sw.includes('/api/jobs/'));
 });

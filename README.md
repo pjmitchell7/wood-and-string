@@ -1,41 +1,48 @@
 # Wood & String
 
-I’m into guitars, and songs like Radiohead’s *Weird Fishes / Arpeggi* and Dahi’s *How To Pray* made me want to hear and study music as instrumentals and explore how those parts might translate to guitar and bass.
+*A local music player, and my experiment in learning songs through guitar.*
 
-Wood & String is my unfinished experiment in a private, local music player that can help with that. I’m working through vocal separation, note transcription, playable arrangements and expressive rendering, with local processing and offline use as the aim.
+I’m into guitars. Radiohead’s *Weird Fishes / Arpeggi* and Dahi’s *How To Pray* made me want to study the parts I kept coming back to, then hear my own instrumental renditions on acoustic guitar, electric guitar and bass.
 
-## Where it is
+Wood & String is what I’m building toward that idea: keep the original recording, understand what matters in it, and turn those ideas into playable parts. Local processing and offline listening are the aim.
 
-The prototype stores and plays local music, makes short experimental acoustic and Jazz Bass previews, and lets me inspect candidate notes or revise a saved passage. Electric guitar, optional drums, full-song arrangements and a small local AI arranger are still being developed. This source snapshot is not a ready-to-install release.
+> **Development snapshot:** this is an unfinished prototype with source and tests, not a ready-to-install release or a reliable automatic song arranger.
 
-There’s also a processing queue: save a short preview request on a device, send it when the laptop is reachable, and let it wait if the laptop is busy. Phone setup and real-device testing are still ahead.
+## What’s here
 
-I want three ways to arrange a song: Keep it close, Essentials and Reimagine. Essentials would keep the riff or melody I came to hear and leave the extra layers out. A synth or vocal might carry that hook in the original; translating it to guitar shouldn’t mean pretending it was a guitar all along. These choices are still being developed.
+| Area | Current prototype |
+| --- | --- |
+| Local music | Import and play a library, download music for offline listening, and queue short preview requests for the laptop. |
+| Short previews | Experimental acoustic and Jazz Bass previews, with candidate notes that can be inspected and revised. |
+| Acoustic parts | Explicit Load, Play, mute, All and seek controls. The new source remembers a listening mix on the same device. |
+| Musical analysis | Experimental phrase and focus tools that keep competing note interpretations and uncertainty visible. |
 
-I’m also working on separate playable parts. Muting one guitarist in a duet leaves a duet with a muted part; making a complete solo version takes different musical decisions. Capturing the same sampled-guitar notes as separate parts kept the combined preview unchanged in a real rendering check. The app source now saves those parts and connects explicit Load, Play, mute and seek controls. A real worker run saved a part from a selected-note preview without changing the main audio. A bug in the final test checker means the whole check is still marked failed. Browser and real-device playback checks are still ahead.
+The new mix storage and playback logic pass silent automated checks. Browser playback, phone setup, cross-device behavior and listening acceptance still need testing. A selected-note acoustic worker saved a part without changing its master audio, but its full test remains failed because the final checker rejected generated methods. The [worker notes](docs/ACOUSTIC-COMPANION-WORKER-001.md) explain that distinction.
 
-## How I’m putting it together
+**Still unfinished:** automatic transcription accuracy, expressive arrangements, full songs, Electric, optional drums, Ensemble and the local AI arranger. Electric remains disabled in the app. The two songs above are inspirations and planned listening tests, not successful recreations.
 
-![The short-preview flow: keep the original, estimate notes, assign parts, play instruments, then save and revise.](diagrams/how-a-preview-works.png)
+## From a song to playable parts
 
-*The short-preview experiment, shown on 16 October 2026. The choppy earlier results are still a problem to solve.*
+![Short-preview flow: preserve the original, estimate notes, assign parts, render, compare and revise.](diagrams/how-a-preview-works.png)
 
-![The composer plan separates hearing the source, planning playable parts, dry instrument sound, effects and listening comparisons.](diagrams/what-the-composer-adds.png)
+*The short-preview workflow, drawn on 16 October 2026. Earlier choppy automatic previews remain rejected.*
 
-*The composer I’m working toward. This provisional map shows existing pieces and planned integration. Optional Electric tone has since reached backend tests, but stays disabled in the app and still needs a listening check.*
+![Composer plan: understand the source, choose musical roles, render instruments, add effects and evaluate the result.](diagrams/what-the-composer-adds.png)
+
+*The composer I’m working toward. This map includes planned connections as well as existing pieces.*
 
 ## What I’m learning
 
-The first previews were choppy. Getting pitches into a guitar sound wasn’t enough: ringing notes, repeated attacks, rests, phrasing and the identity of the important part all matter. Following the vocal melody can miss the guitar pattern that made me interested in the song in the first place.
+Getting the pitches right isn’t enough. Notes need to ring, repeated attacks need to stay distinct, and a quiet passage shouldn’t lose its intention. Following the singer can also miss the guitar pattern that made me interested in a song in the first place.
 
-One useful lesson was that an engine fix left the rejected previews completely unchanged. I’m now recording what each comparison actually tells me about timing, ringing, dynamics or tone, and what still needs a listening check. Those details matter more than a single quality score.
+That is why I’m keeping vocal removal separate from recreating a performance, preserving timing, and recording specific problems with sustain, attacks, rests, dynamics and tone. A passing test doesn’t establish that an arrangement sounds right.
 
-I’ve added a [phrase reader](docs/INSTRUMENTAL-PHRASE-EVIDENCE-001.md) that keeps both note interpretations and the activity around uncertain passages. Its saved-data checks pass. Choosing the main riff and interpreting those gaps are the next problems to solve.
+I want three approaches: **Keep it close**, **Essentials** and **Reimagine**. Essentials would keep the main riff or melody and leave the extra layers out. These are planned arrangement choices. Likewise, muting one part of a Duo leaves a Duo mix; making a complete Solo takes a new musical decision.
 
-I'm also testing a [small focus proposer](docs/FOCUS-POLICY-REPAIR-002.md) that looks for recurring lines while keeping both note interpretations intact. It now keeps staggered patterns and policy disagreements visible instead of combining them into one confident answer. This is still an experimental step toward choosing the part to arrange, and it does not establish that a recreated song sounds right.
+Some of that work is documented in the [phrase reader](docs/INSTRUMENTAL-PHRASE-EVIDENCE-001.md) and [focus proposer](docs/FOCUS-POLICY-REPAIR-002.md). They are development tools, not proof of automatic musical accuracy. The next milestone is better musical decisions followed by real-song listening comparisons.
 
-That has shaped the engineering: keep originals intact, preserve source timing, show uncertain notes and omissions, and keep vocal removal separate from recreating a performance. A successful render or a passing test doesn’t mean the arrangement sounds right.
+## About this repository
 
-Next is making those musical decisions better, then returning to real-song listening comparisons. The two songs above are inspirations and planned tests, not examples I’ve already recreated successfully.
+This public snapshot contains source and tests. Recordings, sample banks, model weights, downloaded runtimes and private development data are excluded. Setup and reproducibility instructions will follow once the app’s behavior is settled.
 
-The public repository contains source and tests. Recordings, sample banks, model weights, downloaded runtimes and private development data are not included there. Original code is MIT licensed; [third-party code and notices](THIRD_PARTY.md) retain their own licenses.
+Original code uses the [MIT license](LICENSE). [Third-party code and notices](THIRD_PARTY.md) retain their own licenses.

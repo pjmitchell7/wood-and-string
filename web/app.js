@@ -7,7 +7,8 @@ import { instrumentalRequest, instrumentalPassage, instrumentalChanges, mountIns
 import { ProcessingOutbox, IndexedProcessingStore } from './processing-outbox.mjs?v=24';
 import { mountSoundDiagnostics } from './sound-diagnostics.mjs?v=24';
 import {electricTonePreset,electricToneForPreset,electricToneLabel,electricToneDescription} from './electric-tone.mjs?v=25';
-import {mountAcousticParts,VERSION as ACOUSTIC_PARTS_VERSION} from './acoustic-parts.mjs?v=27';
+import {mountAcousticParts,VERSION as ACOUSTIC_PARTS_VERSION} from './acoustic-parts.mjs?v=28';
+import {createIndexedMixStore} from './acoustic-mix-store.mjs?v=28';
 
 const $ = id => document.getElementById(id);
 
@@ -134,7 +135,7 @@ async function showJob(job,token=claimResult()){
       if(acousticPartsCapability!==ACOUSTIC_PARTS_VERSION)await loadBassAvailability();
       if(token!==resultGeneration)return;
       disposeAcousticParts();
-      acousticParts=mountAcousticParts({job,root,capability:acousticPartsCapability,session,
+      acousticParts=mountAcousticParts({job,root,capability:acousticPartsCapability,session,mixStore:acousticMixStore,
         beforePlay:()=>{comparison.stop();playGeneration++;audio.pause();transport?.pause()}});
     }
   }
@@ -272,6 +273,7 @@ $('extractForm').onsubmit=async event=>{
 };
 
 const db = await new Promise((resolve,reject)=>{const req=indexedDB.open('wood-library',2);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('tracks'))req.result.createObjectStore('tracks',{keyPath:'id'});if(!req.result.objectStoreNames.contains('settings'))req.result.createObjectStore('settings')};req.onblocked=()=>status('Close other Wood & String tabs to finish updating the library. Saved music is kept.');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});
+const acousticMixStore=createIndexedMixStore(db);
 
 db.onversionchange=()=>{db.close();status('Library updated in another tab. Reload to continue.');};
 function transaction(mode, action) { return new Promise((resolve,reject)=>{const tx=db.transaction('tracks',mode);const request=action(tx.objectStore('tracks'));tx.oncomplete=()=>resolve(request?.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)}) }
